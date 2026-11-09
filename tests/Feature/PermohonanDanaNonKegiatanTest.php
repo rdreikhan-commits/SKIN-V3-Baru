@@ -324,3 +324,4 @@ class PermohonanDanaNonKegiatanTest extends TestCase
         $response->assertSee('Data Terhubung dari Generator Proposal');
     }
 }
+
