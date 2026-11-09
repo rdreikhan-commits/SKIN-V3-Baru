@@ -1,0 +1,106 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Pengajuan;
+use App\Models\WorkflowState;
+use App\Models\HistoriStatus;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+
+class LpjController extends Controller
+{
+    public function index()
+    {
+        $user = Auth::user();
+
+        // Menampilkan daftar pengajuan yang sudah cair dan siap upload LPJ, atau sedang proses LPJ
+        $query = Pengajuan::whereHas('state', function ($q) {
+            $q->whereIn('name', ['funds_disbursed', 'lpj_submitted', 'lpj_wr3_review', 'completed']);
+        })->with(['user', 'state', 'dana', 'tandaTanganDigitals']);
+
+        // Verifikator (bkhm, wr3, admin, bpm) dapat memonitor seluruh LPJ; ormawa hanya milik sendiri
+        if (! $user->hasAnyRole(['admin', 'bkhm', 'wr3', 'bpm'])) {
+            $query->where('user_id', $user->id);
+        }
+
+        $pengajuans = $query->latest()->paginate(10);
+            
+        return view('lpj.index', compact('pengajuans'));
+    }
+
+    public function create(Pengajuan $pengajuan)
+    {
+        if ($pengajuan->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($pengajuan->state->name !== 'funds_disbursed') {
+            return redirect()->route('lpj.index')->with('error', 'Status pengajuan tidak valid untuk upload LPJ.');
+        }
+
+        return view('lpj.create', compact('pengajuan'));
+    }
+
+    public function store(Request $request, Pengajuan $pengajuan)
+    {
+        if ($pengajuan->user_id !== Auth::id() || $pengajuan->state->name !== 'funds_disbursed') {
+            abort(403);
+        }
+
+        $request->validate([
+            'file_lpj' => 'required|file|mimes:pdf|mimetypes:application/pdf|max:10240', // SEC-02: ekstensi + MIME
+        ]);
+
+        if ($request->hasFile('file_lpj')) {
+            // Hapus file lama jika ada
+            if ($pengajuan->file_lpj && Storage::disk('local')->exists($pengajuan->file_lpj)) {
+                Storage::disk('local')->delete($pengajuan->file_lpj);
+            }
+
+            // SEC-01: simpan di disk privat
+            $fileLpj = $request->file('file_lpj');
+            $filename = time() . '_LPJ_' . \Illuminate\Support\Str::slug(pathinfo($fileLpj->getClientOriginalName(), PATHINFO_FILENAME)) . '.pdf';
+            $path = $fileLpj->storeAs('lpj', $filename, 'local');
+
+            $stateLpjSubmitted = WorkflowState::where('name', 'lpj_submitted')->first();
+
+            $pengajuan->update([
+                'file_lpj' => $path,
+                'tanggal_upload_lpj' => now(),
+                'workflow_state_id' => $stateLpjSubmitted->id
+            ]);
+
+            HistoriStatus::create([
+                'pengajuan_id' => $pengajuan->id,
+                'user_id' => Auth::id(),
+                'workflow_state_id' => $stateLpjSubmitted->id,
+                'catatan' => 'Ormawa telah mengupload Laporan Pertanggungjawaban (LPJ).'
+            ]);
+
+            // Legalisir Tanda Tangan Digital pihak yang melampirkan (Ormawa)
+            \App\Services\DigitalSignatureService::sign(
+                $pengajuan->fresh(),
+                Auth::user(),
+                'ormawa_lpj',
+                [
+                    'nama' => Auth::user()->nama_ketua ?: Auth::user()->name,
+                    'jabatan' => 'Ketua ' . Auth::user()->name,
+                    'nidn' => Auth::user()->nim_ketua ?: '-',
+                ]
+            );
+
+            // Bersihkan cache dokumen agar cover TTD terupdate seketika
+            \App\Services\LpjDocumentService::clearCache($pengajuan);
+
+            // FR-022: beri tahu BKHM bahwa LPJ telah diunggah dan siap diverifikasi
+            \App\Services\NotifikasiService::kirimKeRole(
+                'bkhm',
+                'Laporan Pertanggungjawaban (LPJ) untuk kegiatan "' . $pengajuan->nama_kegiatan . '" telah diunggah oleh ' . Auth::user()->name . ' dan siap diverifikasi.'
+            );
+        }
+
+        return redirect()->route('lpj.index')->with('success', 'File LPJ berhasil diunggah dan diajukan untuk verifikasi.');
+    }
+}

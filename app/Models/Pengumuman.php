@@ -1,0 +1,100 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Pengumuman extends Model
+{
+    use HasFactory;
+
+    protected $table = 'pengumuman';
+
+    protected $fillable = [
+        'user_id',
+        'judul',
+        'isi',
+        'kategori',
+        'status',
+        'disetujui_oleh_id',
+        'catatan_kurasi',
+        'tanggal_kegiatan',
+        'gambar_sampul',
+        'file_lampiran',
+    ];
+
+    protected $casts = [
+        'tanggal_kegiatan' => 'date',
+    ];
+
+    public function getGambarUrlAttribute(): ?string
+    {
+        if (!$this->gambar_sampul) {
+            return null;
+        }
+        return asset('storage/' . $this->gambar_sampul);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function disetujuiOleh(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'disetujui_oleh_id');
+    }
+
+    public function scopePublished($query)
+    {
+        return $query->where('status', 'published');
+    }
+
+    public function scopePendingKurasi($query)
+    {
+        return $query->where('status', 'pending_kurasi');
+    }
+
+    public function getBadgeLabelAttribute(): string
+    {
+        if ($this->user && $this->user->hasRole('bkhm')) {
+            return 'Resmi BKHM';
+        }
+        if ($this->user && $this->user->hasRole('bem')) {
+            return 'BEM ITG';
+        }
+        if ($this->user && $this->user->hasRole('bpm')) {
+            return 'BPM ITG';
+        }
+        if ($this->user && $this->user->hasRole('ormawa')) {
+            return $this->user->name;
+        }
+        return 'Informasi Kampus';
+    }
+
+    public function getBadgeColorAttribute(): string
+    {
+        if ($this->user && $this->user->hasRole('bkhm')) {
+            return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+        }
+        if ($this->user && $this->user->hasRole('bem')) {
+            return 'bg-slate-100 text-slate-700 border-slate-200';
+        }
+        if ($this->user && $this->user->hasRole('bpm')) {
+            return 'bg-amber-100 text-amber-800 border-amber-200';
+        }
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'published' => 'Telah Terbit',
+            'pending_kurasi' => 'Menunggu Kurasi BKHM',
+            'ditolak' => 'Perlu Revisi BKHM',
+            default => ucfirst($this->status),
+        };
+    }
+}

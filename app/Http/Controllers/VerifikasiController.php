@@ -1,0 +1,323 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Pengajuan;
+use App\Models\WorkflowState;
+use App\Models\WorkflowTransition;
+use App\Models\HistoriStatus;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class VerifikasiController extends Controller
+{
+    public function index(Request $request)
+    {
+        $userRole = Auth::user()->roles->first()->name;
+
+        if ($userRole === 'admin') {
+            $pengajuans = Pengajuan::with(['user', 'state', 'programKerja'])->latest()->paginate(10);
+            return view('verifikasi.index', compact('pengajuans'));
+        }
+
+        // Find all transitions allowed for this user's role
+        $allowedTransitions = WorkflowTransition::where('required_role', $userRole)->get();
+        $allowedStateIds = $allowedTransitions->pluck('from_state_id')->unique();
+
+        // KRITIS-1 Opsi C: antrean verifikator TIDAK BOLEH menampilkan pengajuan berstate
+        // `draft`. Draft adalah milik pengaju (disubmit via `PengajuanController::ajukan`),
+        // bukan domain verifikator. Membiarkannya tampil membocorkan daftar draft pengaju
+        // lain dan, sebelum patch A, memungkinkan transisi `draft -> ...` diterapkan dari
+        // antrean verifikator — melompati tahap BR-03/BR-14.
+        $draftStateId = WorkflowState::where('name', 'draft')->value('id');
+        if ($draftStateId) {
+            $allowedStateIds = $allowedStateIds->reject($draftStateId);
+        }
+
+        // Get all pengajuan that are currently in a state that this user can action
+        $query = Pengajuan::whereIn('workflow_state_id', $allowedStateIds)
+            ->with(['user', 'state', 'programKerja']);
+
+        // Khusus Pembina Prodi: batasi antrean hanya untuk HIMA di prodinya
+        if ($userRole === 'prodi' && Auth::user()->prodi) {
+            $userProdi = Auth::user()->prodi;
+            $query->whereHas('user', fn($q) => $q->where('prodi', $userProdi));
+        }
+
+        if ($request->filled('status')) {
+            $status = $request->status;
+            if ($status === 'siap_bendahara') {
+                $query->whereHas('state', fn($q) => $q->where('name', WorkflowState::WR3_APPROVED));
+            } elseif ($status === 'proposal') {
+                $query->whereHas('state', fn($q) => $q->whereIn('name', [WorkflowState::SUBMITTED, WorkflowState::BEM_APPROVED, WorkflowState::BPM_APPROVED]));
+            } elseif ($status === 'lpj') {
+                $query->whereHas('state', fn($q) => $q->whereIn('name', [WorkflowState::LPJ_SUBMITTED, WorkflowState::LPJ_WR3_REVIEW]));
+            } else {
+                $query->whereHas('state', fn($q) => $q->where('name', $status));
+            }
+        }
+
+        $pengajuans = $query->latest()
+            ->paginate(10)
+            ->withQueryString();
+            
+        return view('verifikasi.index', compact('pengajuans'));
+    }
+
+    public function show(Pengajuan $pengajuan)
+    {
+        $userRole = Auth::user()->roles->first()->name;
+        
+        if ($userRole === 'prodi' && Auth::user()->prodi && $pengajuan->user?->prodi !== Auth::user()->prodi) {
+            abort(403, 'Anda hanya dapat memverifikasi pengajuan dari Himpunan Mahasiswa program studi Anda.');
+        }
+
+        if ($userRole === 'satgas_ppks' && $pengajuan->isBypassPpks()) {
+            abort(403, 'Pengajuan ini adalah permohonan dana non-kegiatan yang tidak melalui Satgas PPKS.');
+        }
+
+        $pengajuan->load(['user', 'state', 'histori.user', 'histori.state', 'programKerja', 'komunikasi.user', 'tandaTanganDigitals']);
+
+        if ($userRole === 'admin') {
+            $availableTransitions = collect();
+            return view('verifikasi.show', compact('pengajuan', 'availableTransitions'));
+        }
+        
+        // Get transitions available for this specific state AND this user's role
+        $availableTransitions = WorkflowTransition::where('from_state_id', $pengajuan->workflow_state_id)
+            ->where('required_role', $userRole)
+            ->with(['fromState', 'toState'])
+            ->get();
+
+        // KRITIS-1 Opsi C: transisi yang berangkat dari state `draft` (submit/ajukan)
+        // adalah milik pengaju, BUKAN verifikator. Jangan ekspos tombolnya kepada
+        // verifikator yang bukan pemilik pengajuan — meskipun secara teknis role-nya
+        // punya transisi tersebut (bem/bpm juga bisa menjadi pengaju).
+        $availableTransitions = $availableTransitions->reject(
+            fn ($t) => $t->fromState->name === 'draft' && $pengajuan->user_id !== Auth::id()
+        );
+
+        // Filter alur Satgas PPKS vs Bypass (Permohonan Dana Non-Kegiatan)
+        if ($userRole === 'bpm') {
+            if ($pengajuan->isBypassPpks()) {
+                // Non-kegiatan (pengadaan barang / pendanaan lomba): bypass Satgas PPKS, langsung ke BKHM
+                $availableTransitions = $availableTransitions->reject(
+                    fn ($t) => $t->toState->name === 'ppks_review'
+                );
+            } else {
+                // Kegiatan: wajib melalui Satgas PPKS
+                $availableTransitions = $availableTransitions->reject(
+                    fn ($t) => $t->fromState->name === 'bem_approved' && $t->toState->name === 'bpm_approved'
+                );
+            }
+        }
+
+        return view('verifikasi.show', compact('pengajuan', 'availableTransitions'));
+    }
+
+    public function process(Request $request, Pengajuan $pengajuan)
+    {
+        $request->validate([
+            'transition_id' => 'required|exists:workflow_transitions,id',
+            'catatan' => 'nullable|string',
+            'nomor_surat' => 'nullable|string|max:255'
+        ]);
+
+        $transition = WorkflowTransition::with(['fromState', 'toState'])->findOrFail($request->transition_id);
+        $userRole = Auth::user()->roles->first()->name;
+
+        if ($userRole === 'prodi' && Auth::user()->prodi && $pengajuan->user?->prodi !== Auth::user()->prodi) {
+            abort(403, 'Aksi tidak diizinkan untuk program studi ini.');
+        }
+
+        if ($userRole === 'satgas_ppks' && $pengajuan->isBypassPpks()) {
+            abort(403, 'Pengajuan ini adalah permohonan dana non-kegiatan yang tidak melalui Satgas PPKS.');
+        }
+
+        // Guard alur Satgas PPKS vs Bypass untuk BPM
+        if ($userRole === 'bpm') {
+            if ($pengajuan->isBypassPpks() && $transition->toState->name === 'ppks_review') {
+                abort(403, 'Pengajuan permohonan dana non-kegiatan tidak melalui Satgas PPKS.');
+            }
+            if (! $pengajuan->isBypassPpks() && $transition->fromState->name === 'bem_approved' && $transition->toState->name === 'bpm_approved') {
+                abort(403, 'Proposal kegiatan mahasiswa wajib diverifikasi oleh Satgas PPKS terlebih dahulu.');
+            }
+        }
+
+        // Verify the transition is valid for the current state and user's role
+        if ($transition->from_state_id !== $pengajuan->workflow_state_id || $transition->required_role !== $userRole) {
+            abort(403, 'Aksi tidak diizinkan.');
+        }
+
+        // KRITIS-1 Opsi A: transisi yang berangkat dari state `draft` (submit/ajukan)
+        // hanya boleh dipakai oleh PEMILIK pengajuan. Role bem/bpm secara teknis punya
+        // transisi `draft -> ...` karena mereka juga bisa menjadi pengaju; guard ini
+        // mencegah mereka memakai transisi itu terhadap draft milik pengaju lain, yang
+        // akan melompati tahap verifikasi berjenjang (BR-03 / BR-14).
+        if ($transition->fromState->name === 'draft' && $pengajuan->user_id !== Auth::id()) {
+            abort(403, 'Aksi tidak diizinkan.');
+        }
+
+        // Jika menolak atau revisi (termasuk revisi proposal ke draft atau revisi LPJ ke funds_disbursed), catatan wajib diisi
+        $isRejecting = in_array($transition->toState->name, ['rejected', 'draft']) 
+            || ($transition->toState->name === 'funds_disbursed' && str_contains(strtolower($transition->action_label), 'revisi'));
+        if ($isRejecting && empty($request->catatan)) {
+            return back()->withInput()->with('error', 'Catatan wajib diisi jika menolak atau merevisi pengajuan.');
+        }
+
+        // BKHM Tahap 1 (bpm_approved → bkhm_approved): nomor surat wajib diisi
+        // sebelum meneruskan ke WR3. Target mengikuti nama state pada WorkflowSeeder.
+        if ($userRole === 'bkhm'
+            && $transition->toState->name === 'bkhm_approved'
+            && ! $pengajuan->nomor_surat
+            && ! $request->nomor_surat) {
+            return back()->with('error', 'Nomor surat wajib diisi sebelum meneruskan ke WR3.');
+        }
+
+        // Apply transition
+        $dataToUpdate = [
+            'workflow_state_id' => $transition->to_state_id
+        ];
+
+        // FR-009: revisi/tolak dikembalikan ke pengusul; simpan titik penolakan
+        // agar pengajuan ulang kembali ke tahap yang menolak.
+        if ($isRejecting) {
+            $dataToUpdate['rejected_from_state_id'] = $pengajuan->workflow_state_id;
+        } else {
+            $dataToUpdate['rejected_from_state_id'] = null;
+        }
+
+        // BR-11: verifikasi LPJ oleh WR3 sekaligus menandai evaluasi termin selesai,
+        // sehingga pencairan termin berikutnya memungkinkan.
+        if ($userRole === 'wr3' && $transition->toState->name === 'completed') {
+            $dataToUpdate['evaluasi_termin_ok'] = true;
+        }
+
+        // Catat pengesahan spesifik Pembina Prodi / Satgas PPKS
+        if ($userRole === 'prodi' && ! $isRejecting) {
+            $dataToUpdate['verified_prodi_at'] = now();
+            if ($request->filled('catatan')) {
+                $dataToUpdate['catatan_prodi'] = $request->catatan;
+            }
+        }
+
+        if ($userRole === 'satgas_ppks' && ! $isRejecting) {
+            $dataToUpdate['verified_ppks_at'] = now();
+            if ($request->filled('catatan')) {
+                $dataToUpdate['catatan_ppks'] = $request->catatan;
+            }
+        }
+
+        // Save nomor_surat if provided (BKHM)
+        if ($request->filled('nomor_surat')) {
+            $dataToUpdate['nomor_surat'] = $request->nomor_surat;
+        }
+
+        $pengajuan->update($dataToUpdate);
+
+        HistoriStatus::create([
+            'pengajuan_id' => $pengajuan->id,
+            'user_id' => Auth::id(),
+            'workflow_state_id' => $transition->to_state_id,
+            'catatan' => $request->catatan ?? 'Status diubah: ' . $transition->action_label,
+            'catatan_kendala' => $isRejecting ? ($request->catatan ?? 'Pengajuan dikembalikan/ditolak pada tahap ' . $transition->toState->label) : null
+        ]);
+
+        // FR-025: notifikasi ke pengaju atas perubahan status.
+        \App\Services\NotifikasiService::kirim(
+            $pengajuan->user_id,
+            'Pengajuan "' . $pengajuan->nama_kegiatan . '" kini berstatus: ' . $transition->toState->label . '.'
+        );
+
+        // FR-022: beri tahu verifikator tahap berikutnya bahwa pengajuan masuk ke antrean mereka
+        if (! $isRejecting) {
+            // Tentukan role tanda tangan digital: jika LPJ, bedakan agar tanda tangan proposal tidak tertimpa
+            $sigRole = match (true) {
+                $transition->fromState?->name === 'lpj_submitted' && $userRole === 'bkhm' => 'bkhm_lpj',
+                $transition->fromState?->name === 'lpj_wr3_review' && $userRole === 'wr3' => 'wr3_lpj',
+                default => $userRole,
+            };
+
+            // Bubuhkan tanda tangan digital otentik pejabat verifikator
+            \App\Services\DigitalSignatureService::sign($pengajuan->fresh(), Auth::user(), $sigRole);
+
+            // Bersihkan cache dokumen gabungan agar Lembar Pengesahan langsung memuat TTD terbaru
+            \App\Services\LpjDocumentService::clearCache($pengajuan);
+
+            $nextRole = match ($transition->toState->name) {
+                'submitted' => 'bem',
+                'bem_approved' => 'bpm',
+                'ppks_review' => 'satgas_ppks',
+                'bpm_approved' => 'bkhm',
+                'bkhm_approved' => 'wr3',
+                'wr3_approved' => 'bkhm',
+                'to_treasurer' => 'bendahara',
+                'lpj_wr3_review' => 'wr3',
+                'completed' => 'bkhm',
+                default => null,
+            };
+
+            if ($nextRole) {
+                $nextRoleLabel = match ($nextRole) {
+                    'prodi' => 'Pembina Prodi',
+                    'satgas_ppks' => 'Satgas PPKS',
+                    'bem' => 'BEM',
+                    'bpm' => 'BPM',
+                    'bkhm' => 'BKHM',
+                    'wr3' => 'Wakil Rektor III',
+                    'bendahara' => 'Bendahara',
+                    default => strtoupper($nextRole),
+                };
+
+                $pesanNotifikasi = match ($transition->toState->name) {
+                    'lpj_wr3_review' => 'Laporan Pertanggungjawaban (LPJ) untuk kegiatan "' . $pengajuan->nama_kegiatan . '" telah disetujui & dilegalisir oleh BKHM dan kini menunggu verifikasi akhir dari Wakil Rektor III.',
+                    'completed' => 'Laporan Pertanggungjawaban (LPJ) untuk kegiatan "' . $pengajuan->nama_kegiatan . '" telah diverifikasi & dilegalisir lengkap oleh Wakil Rektor III. Seluruh rangkaian kegiatan telah resmi selesai.',
+                    default => 'Pengajuan "' . $pengajuan->nama_kegiatan . '" telah diproses oleh ' . strtoupper($userRole) . ' dan kini masuk ke antrean ' . $nextRoleLabel . '.',
+                };
+
+                \App\Services\NotifikasiService::kirimKeRole(
+                    $nextRole,
+                    $pesanNotifikasi
+                );
+            }
+        }
+
+        // FR-022 §22 no.9: penolakan oleh lembaga juga diberitahukan ke akun BEM.
+        if ($isRejecting && $pengajuan->user && $pengajuan->user->hasRole('ormawa')) {
+            \App\Services\NotifikasiService::kirimKeRole(
+                'bem',
+                'Proposal "' . $pengajuan->nama_kegiatan . '" ditolak/dikembalikan pada tahap '
+                    . ($transition->fromState->label ?? 'verifikasi') . '.'
+            );
+        }
+
+        return redirect()->route('verifikasi.index')->with('success', 'Pengajuan berhasil diproses.');
+    }
+
+    /**
+     * BR-11: tandai evaluasi termin selesai agar pencairan termin berikutnya memungkinkan.
+     */
+    public function evaluasiTermin(Pengajuan $pengajuan)
+    {
+        $role = Auth::user()->roles->first()->name;
+
+        if (! in_array($role, ['wr3', 'bkhm', 'admin'], true)) {
+            abort(403, 'Aksi tidak diizinkan.');
+        }
+
+        if ($pengajuan->state->name !== 'funds_disbursed') {
+            return back()->with('error', 'Evaluasi termin hanya dapat ditandai setelah dana termin sebelumnya dicairkan.');
+        }
+
+        $pengajuan->update(['evaluasi_termin_ok' => true]);
+
+        HistoriStatus::create([
+            'pengajuan_id' => $pengajuan->id,
+            'user_id' => Auth::id(),
+            'workflow_state_id' => $pengajuan->workflow_state_id,
+            'catatan' => 'Evaluasi termin ditandai selesai (BR-11).',
+        ]);
+
+        return back()->with('success', 'Evaluasi termin ditandai selesai.');
+    }
+}

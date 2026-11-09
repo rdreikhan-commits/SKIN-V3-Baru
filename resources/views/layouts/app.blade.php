@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+
+        <title>{{ isset($title) ? $title . ' - ' : '' }}SKIN - Sistem Ormawa Institut Teknologi Garut</title>
+        <link rel="icon" type="image/png" href="{{ asset('images/logo-skin-torch.png') }}">
+        <link rel="apple-touch-icon" href="{{ asset('images/logo-skin-torch.png') }}">
+        <link rel="manifest" href="{{ asset('manifest.json') }}">
+        <meta name="theme-color" content="#0B1528">
+
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.bunny.net">
+        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
+
+        <!-- Scripts -->
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    </head>
+    <body class="font-sans antialiased text-slate-900 bg-slate-50">
+        {{-- UI-019: skip link untuk pengguna keyboard/screen reader --}}
+        <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:bg-white focus:text-blue-700 focus:px-4 focus:py-2 focus:rounded-xl focus:shadow-md">
+            Lewati ke konten utama
+        </a>
+        <div class="min-h-screen bg-slate-50" x-data="{
+            isMobile: window.innerWidth < 1024,
+            sidebarOpen: window.innerWidth >= 1024 
+                ? (localStorage.getItem('skin.sidebarOpen') !== null ? localStorage.getItem('skin.sidebarOpen') === '1' : true)
+                : false,
+            toggleSidebar() {
+                this.sidebarOpen = !this.sidebarOpen;
+                if (!this.isMobile) {
+                    localStorage.setItem('skin.sidebarOpen', this.sidebarOpen ? '1' : '0');
+                }
+            },
+            init() {
+                window.addEventListener('resize', () => {
+                    const wasMobile = this.isMobile;
+                    this.isMobile = window.innerWidth < 1024;
+                    if (wasMobile !== this.isMobile) {
+                        this.sidebarOpen = !this.isMobile && (localStorage.getItem('skin.sidebarOpen') !== null ? localStorage.getItem('skin.sidebarOpen') === '1' : true);
+                    }
+                });
+            }
+        }">
+            <div class="flex h-screen overflow-hidden">
+                
+                <!-- Sidebar (Opsi 4) -->
+                @include('layouts.sidebar')
+
+                <div class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+                    
+                    <!-- Top Header / Top Bar (Opsi 1: Clean Academic Light) -->
+                    <header class="min-h-[72px] flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 bg-white border-b border-slate-200/90 sticky top-0 z-30 transition-all select-none">
+                        
+                        {{-- Kiri: Tombol Toggle Sidebar, Breadcrumb & Header Title --}}
+                        <div class="flex items-center min-w-0 mr-3 sm:mr-4 flex-1">
+                            <button @click="toggleSidebar()" 
+                                    aria-label="Buka atau tutup menu navigasi" 
+                                    :aria-expanded="sidebarOpen" 
+                                    title="Perluas / perkecil menu samping" 
+                                    class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200/90 flex items-center justify-center transition shadow-xs shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
+
+                            <div class="ml-3 sm:ml-4 min-w-0">
+                                @php
+                                    $rawHeader = isset($header) ? (string)$header : '';
+                                    
+                                    // 1. Ekstrak judul bersih dari tag heading <h1>..<h4> jika ada, bukan seluruh isi div/link/paragraf
+                                    $extractedTitle = '';
+                                    if (preg_match('/<h[1-4][^>]*>(.*?)<\/h[1-4]>/is', $rawHeader, $matches)) {
+                                        $extractedTitle = trim(strip_tags($matches[1]));
+                                    } elseif (!empty($rawHeader)) {
+                                        // Ambil potongan teks pertama sebelum tag paragraf/div/link
+                                        $parts = preg_split('/<(?:p|div|ul|ol|table|a|button)\b/i', $rawHeader);
+                                        $extractedTitle = trim(strip_tags($parts[0] ?? $rawHeader));
+                                    }
+
+                                    // Decode HTML entities (seperti &amp; -> &, &larr; -> ←)
+                                    $extractedTitle = html_entity_decode($extractedTitle, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                                    
+                                    if (empty($extractedTitle)) {
+                                        $extractedTitle = 'Dashboard';
+                                    }
+
+                                    $rawRole = Auth::user() ? Auth::user()->getRoleNames()->first() : null;
+                                    $roleShort = match ($rawRole) {
+                                        'admin' => 'Admin',
+                                        'bkhm' => 'BKHM',
+                                        'sarpras' => 'Sarpras',
+                                        'wr3' => 'WR3',
+                                        'bem' => 'BEM',
+                                        'bpm' => 'BPM',
+                                        'ormawa' => 'Ormawa',
+                                        'bendahara' => 'Bendahara',
+                                        default => 'Portal',
+                                    };
+
+                                    $panelTitle = match ($rawRole) {
+                                        'admin' => 'Panel Administrator Sistem',
+                                        'bkhm' => 'Panel Verifikator BKHM',
+                                        'sarpras' => 'Panel Manajemen Sarpras',
+                                        'wr3' => 'Panel Wakil Rektor III',
+                                        'bem' => 'Panel Pengurus BEM ITG',
+                                        'bpm' => 'Panel Pengurus BPM ITG',
+                                        'ormawa' => 'Portal Pengurus Ormawa',
+                                        'bendahara' => 'Panel Bendahara Kampus',
+                                        default => 'Dashboard Utama',
+                                    };
+
+                                    $isDashboardRoute = request()->routeIs('dashboard');
+                                    $displayTitle = !empty($extractedTitle) ? $extractedTitle : ($isDashboardRoute ? $panelTitle : 'Dashboard');
+                                    
+                                    // Breadcrumb title: ringkas (maks 26 karakter) agar tidak mentok
+                                    $displayBreadcrumb = !empty($extractedTitle) 
+                                        ? \Illuminate\Support\Str::limit($extractedTitle, 26, '…') 
+                                        : ($isDashboardRoute ? 'Dashboard Utama' : 'Dashboard');
+
+                                    // Cek apakah header memiliki action button atau deskripsi tambahan dari sub-view
+                                    $hasActionLink = (bool) preg_match('/<a\b[^>]*>/i', $rawHeader);
+                                    $hasParagraph = (bool) preg_match('/<p\b[^>]*>/i', $rawHeader);
+                                    $isRichHeader = $hasActionLink || $hasParagraph;
+                                @endphp
+
+                                {{-- Breadcrumb Navigation 3 Level (Anti Mentok & Truncated) --}}
+                                <nav aria-label="Breadcrumb" class="hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-slate-400 mb-1 leading-none select-none max-w-full">
+                                    <a href="{{ route('dashboard') }}" class="text-slate-400 hover:text-blue-700 transition shrink-0">Sistem Ormawa</a>
+                                    <svg class="w-3 h-3 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    <span class="text-slate-400 shrink-0">{{ $breadcrumbGroup ?? $roleShort }}</span>
+                                    <svg class="w-3 h-3 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    <span class="text-[#1E40AF] font-bold truncate max-w-[200px]" title="{{ $extractedTitle }}">{{ $breadcrumbTitle ?? $displayBreadcrumb }}</span>
+                                </nav>
+
+                                {{-- Page Title & Academic Year Badge (Flex-nowrap agar satu baris) --}}
+                                <div class="flex items-center gap-2.5 flex-nowrap min-w-0 flex-1">
+                                    <h1 class="text-sm sm:text-base lg:text-lg font-extrabold text-slate-900 tracking-tight leading-tight truncate" title="{{ $displayTitle }}">
+                                        {{ $displayTitle }}
+                                    </h1>
+                                    <span class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[10px] sm:text-[11px] font-bold tracking-wide shadow-xs shrink-0 select-none whitespace-nowrap">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        T.A. 2026/2027 Ganjil
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Kanan: Action Buttons & Profil Pengguna --}}
+                        <div class="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
+                            @include('layouts.user-menu')
+                        </div>
+                    </header>
+
+                    <!-- Main Content -->
+                    <main id="main-content" class="p-4 sm:p-6 lg:p-8">
+                        {{-- SEC-03: flash dirender SEKALI di sini. Jangan tambahkan rendering
+                             flash per-view, halaman yang lupa merendernya membuat pesan
+                             hilang tanpa jejak (bug F1-F4, BACKLOG-004). --}}
+                        <x-flash />
+
+                        {{-- Banner Aksi Halaman jika sub-view memiliki tombol aksi atau deskripsi kaya --}}
+                        @if ($isRichHeader)
+                            <div class="mb-6 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                                {!! $header !!}
+                            </div>
+                        @endif
+
+                        {{ $slot }}
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        {{-- Modal Asisten Si Ujang & Panduan Interaktif --}}
+        <x-panduan-modal />
+
+        {{-- Modal Tentang Sistem & Pengembang --}}
+        <x-about-modal />
+    </body>
+</html>

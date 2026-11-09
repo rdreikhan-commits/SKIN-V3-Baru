@@ -1,0 +1,280 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Pengumuman;
+use App\Models\Regulasi;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+
+class InformasiController extends Controller
+{
+    public function index(Request $request)
+    {
+        $kategoriFilter = $request->query('kategori');
+
+        $query = Pengumuman::published()->with(['user', 'disetujuiOleh'])->latest();
+
+        if ($kategoriFilter && $kategoriFilter !== 'semua') {
+            $query->where('kategori', $kategoriFilter);
+        }
+
+        $pengumuman = $query->get();
+        $regulasi = Regulasi::with('user')->latest()->get();
+
+        $pengumumanSaya = collect();
+        $antreanKurasiCount = 0;
+
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user->hasAnyRole(['ormawa', 'bem', 'bpm'])) {
+                $pengumumanSaya = Pengumuman::where('user_id', $user->id)->latest()->get();
+            }
+            if ($user->hasRole('bkhm') || $user->hasRole('admin')) {
+                $antreanKurasiCount = Pengumuman::pendingKurasi()->count();
+            }
+        }
+        
+        return view('informasi.index', compact('pengumuman', 'regulasi', 'pengumumanSaya', 'antreanKurasiCount', 'kategoriFilter'));
+    }
+
+    public function storePengumuman(Request $request)
+    {
+        $user = Auth::user();
+        abort_unless($user->hasAnyRole(['bem', 'bpm', 'bkhm', 'ormawa', 'admin']), 403);
+
+        $request->validate([
+            'judul' => 'required|string|max:255',
+            'isi' => 'required|string',
+            'kategori' => 'nullable|string|max:50',
+            'tanggal_kegiatan' => 'nullable|date',
+            'gambar_sampul' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'file_lampiran' => 'nullable|file|mimes:pdf,jpg,jpeg,png|mimetypes:application/pdf,image/jpeg,image/png|max:5120',
+        ]);
+
+        $gambarSampulPath = null;
+        if ($request->hasFile('gambar_sampul')) {
+            $gambarSampulPath = $request->file('gambar_sampul')->store('pengumuman/sampul', 'public');
+        }
+
+        $lampiranPath = null;
+        if ($request->hasFile('file_lampiran')) {
+            // SEC-01: file disimpan di disk privat, disajikan lewat controller.
+            $lampiranPath = $request->file('file_lampiran')->store('pengumuman', 'local');
+        }
+
+        // Tentukan status & kategori:
+        // BKHM dan Admin menerbitkan langsung (Humas & Otoritas Resmi)
+        // Lembaga mahasiswa (Ormawa HIMA/UKM, BEM, BPM) masuk antrean kurasi BKHM
+        if ($user->hasRole('bkhm') || $user->hasRole('admin')) {
+            $status = 'published';
+            $kategori = $request->kategori ?: 'resmi_kampus';
+            $flashMsg = 'Pengumuman resmi kampus berhasil diterbitkan.';
+        } else {
+            // ormawa, bem, bpm
+            $status = 'pending_kurasi';
+            $kategori = 'kegiatan_kemahasiswaan';
+            $flashMsg = 'Pengajuan berita berhasil dikirim dan menunggu kurasi BKHM sebelum diterbitkan.';
+        }
+
+        Pengumuman::create([
+            'user_id' => $user->id,
+            'judul' => $request->judul,
+            'isi' => $request->isi,
+            'kategori' => $kategori,
+            'status' => $status,
+            'tanggal_kegiatan' => $request->tanggal_kegiatan,
+            'gambar_sampul' => $gambarSampulPath,
+            'file_lampiran' => $lampiranPath,
+        ]);
+
+        // Notifikasi:
+        if ($status === 'published') {
+            // FR-022: pengumuman resmi broadcast ke semua pengguna
+            \App\Services\NotifikasiService::kirimKeSemua('Pengumuman baru: "' . $request->judul . '".');
+        } else {
+            // Pengajuan dari ormawa / bem / bpm masuk ke antrean kurasi BKHM
+            \App\Services\NotifikasiService::kirimKeRole('bkhm', 'Pengajuan berita baru dari ' . $user->name . ': "' . $request->judul . '". Silakan periksa di antrean kurasi BKHM.');
+        }
+
+        return redirect()->route('informasi.index')->with('success', $flashMsg)->with('status', $flashMsg);
+    }
+
+    public function kurasiIndex()
+    {
+        abort_unless(Auth::user()->hasAnyRole(['bkhm', 'admin']), 403);
+
+        $pengumumans = Pengumuman::pendingKurasi()->with('user')->latest()->paginate(15);
+        return view('bkhm.kurasi.index', compact('pengumumans'));
+    }
+
+    public function kurasiApprove(Pengumuman $pengumuman)
+    {
+        abort_unless(Auth::user()->hasAnyRole(['bkhm', 'admin']), 403);
+
+        $pengumuman->update([
+            'status' => 'published',
+            'disetujui_oleh_id' => Auth::id(),
+        ]);
+
+        \App\Services\NotifikasiService::kirim(
+            $pengumuman->user_id,
+            'Berita kegiatan Anda "' . $pengumuman->judul . '" telah disetujui BKHM dan resmi diterbitkan di Pusat Informasi.'
+        );
+
+        $msg = 'Pengumuman / berita telah disetujui dan diterbitkan.';
+        return redirect()->route('bkhm.kurasi.index')->with('success', $msg)->with('status', $msg);
+    }
+
+    public function kurasiReject(Request $request, Pengumuman $pengumuman)
+    {
+        abort_unless(Auth::user()->hasAnyRole(['bkhm', 'admin']), 403);
+
+        $request->validate([
+            'catatan_kurasi' => 'required|string',
+        ]);
+
+        $pengumuman->update([
+            'status' => 'ditolak',
+            'catatan_kurasi' => $request->catatan_kurasi,
+        ]);
+
+        \App\Services\NotifikasiService::kirim(
+            $pengumuman->user_id,
+            'Pengajuan berita "' . $pengumuman->judul . '" ditolak oleh BKHM dengan catatan: ' . $request->catatan_kurasi
+        );
+
+        $msg = 'Pengumuman / berita telah ditolak.';
+        return redirect()->route('bkhm.kurasi.index')->with('success', $msg)->with('status', $msg);
+    }
+
+    /**
+     * Tampilan detail berita publik / pratinjau draf untuk kurator.
+     */
+    public function show(Pengumuman $pengumuman)
+    {
+        // Jika belum published, hanya penulis, BEM, BPM, BKHM, atau Admin yang boleh melihat pratinjau
+        if ($pengumuman->status !== 'published') {
+            $canPreview = Auth::check() && (
+                Auth::user()->hasAnyRole(['bem', 'bpm', 'bkhm', 'admin']) ||
+                Auth::id() === $pengumuman->user_id
+            );
+            abort_unless($canPreview, 404, 'Informasi tidak ditemukan atau belum diterbitkan.');
+        }
+
+        $pengumuman->load(['user', 'disetujuiOleh']);
+
+        $beritaTerkait = Pengumuman::published()
+            ->where('id', '!=', $pengumuman->id)
+            ->latest()
+            ->take(4)
+            ->get();
+
+        return view('informasi.show', compact('pengumuman', 'beritaTerkait'));
+    }
+
+    public function destroyPengumuman(Pengumuman $pengumuman)
+    {
+        $canDelete = Auth::user()->hasAnyRole(['bem', 'bkhm', 'admin']) || Auth::id() === $pengumuman->user_id;
+        abort_unless($canDelete, 403);
+
+        if ($pengumuman->gambar_sampul && Storage::disk('public')->exists($pengumuman->gambar_sampul)) {
+            Storage::disk('public')->delete($pengumuman->gambar_sampul);
+        }
+
+        if ($pengumuman->file_lampiran && Storage::disk('local')->exists($pengumuman->file_lampiran)) {
+            Storage::disk('local')->delete($pengumuman->file_lampiran);
+        }
+
+        $pengumuman->delete();
+        $msg = 'Pengumuman berhasil dihapus.';
+        return redirect()->route('informasi.index')->with('success', $msg)->with('status', $msg);
+    }
+
+    public function storeRegulasi(Request $request)
+    {
+        abort_unless(Auth::user()->hasRole('bpm'), 403);
+
+        $request->validate([
+            'judul' => 'required|string|max:255',
+            'kategori' => 'required|string|max:100',
+            'deskripsi' => 'nullable|string',
+            'file' => 'nullable|file|mimes:pdf|mimetypes:application/pdf|max:10240',
+            'file_path' => 'nullable|file|mimes:pdf|mimetypes:application/pdf|max:10240',
+        ]);
+
+        $uploadedFile = $request->file('file_path') ?? $request->file('file');
+        if (!$uploadedFile) {
+            return redirect()->back()->withErrors(['file' => 'Dokumen PDF wajib diunggah.']);
+        }
+
+        $data = [
+            'user_id' => Auth::id(),
+            'judul' => $request->judul,
+            'kategori' => $request->kategori,
+            'deskripsi' => $request->deskripsi,
+            // SEC-01: file disimpan di disk privat, disajikan lewat controller.
+            'file_path' => $uploadedFile->store('regulasi', 'local'),
+        ];
+
+        Regulasi::create($data);
+
+        // FR-022 §22 no.8: beri tahu seluruh pengguna atas regulasi baru.
+        \App\Services\NotifikasiService::kirimKeSemua('Regulasi baru: "' . $request->judul . '".');
+
+        return redirect()->back()->with('success', 'Regulasi/UU berhasil ditambahkan.');
+    }
+
+    public function destroyRegulasi(Regulasi $regulasi)
+    {
+        abort_unless(Auth::user()->hasRole('bpm'), 403);
+
+        if ($regulasi->file_path && Storage::disk('local')->exists($regulasi->file_path)) {
+            Storage::disk('local')->delete($regulasi->file_path);
+        }
+
+        $regulasi->delete();
+        return redirect()->back()->with('success', 'Regulasi berhasil dihapus.');
+    }
+
+    /**
+     * SEC-01: sajikan lampiran pengumuman dari disk privat (dapat diakses publik).
+     */
+    public function lampiranPengumuman(Pengumuman $pengumuman)
+    {
+        abort_if(! $pengumuman->file_lampiran, 404, 'Lampiran tidak ditemukan.');
+
+        return $this->serveFile(
+            $pengumuman->file_lampiran,
+            'lampiran-pengumuman-' . $pengumuman->id . '.' . pathinfo($pengumuman->file_lampiran, PATHINFO_EXTENSION)
+        );
+    }
+
+    /**
+     * SEC-01: sajikan dokumen regulasi dari disk privat (dapat diakses publik).
+     */
+    public function unduhRegulasi(Regulasi $regulasi)
+    {
+        abort_if(! $regulasi->file_path, 404, 'Dokumen tidak ditemukan.');
+
+        return $this->serveFile(
+            $regulasi->file_path,
+            'regulasi-' . $regulasi->id . '.' . pathinfo($regulasi->file_path, PATHINFO_EXTENSION)
+        );
+    }
+
+    /**
+     * Utamakan disk privat; fallback ke disk public untuk file lama yang belum dimigrasikan.
+     */
+    private function serveFile(string $path, string $downloadName)
+    {
+        foreach (['local', 'public'] as $disk) {
+            if (Storage::disk($disk)->exists($path)) {
+                return Storage::disk($disk)->download($path, $downloadName);
+            }
+        }
+
+        abort(404, 'Dokumen tidak ditemukan.');
+    }
+}
