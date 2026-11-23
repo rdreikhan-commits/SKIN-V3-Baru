@@ -69,22 +69,12 @@ class TandaTanganDigital extends Model
         $role = strtolower($this->role ?? '');
         $jabatan = strtolower($this->jabatan_penandatangan ?? '');
 
-        // Kategori Mahasiswa: BEM, BPM, HIMA, UKM, Ormawa, Ketua/Sekretaris/Bendahara Ormawa
-        if (in_array($role, ['bem', 'bpm', 'ormawa', 'hima', 'ukm', 'mahasiswa', 'ormawa_lpj', 'ketua', 'sekretaris', 'ketua_pelaksana', 'sekretaris_pelaksana', 'bendahara_pelaksana'])
-            || ($role === 'bendahara' && !str_contains($jabatan, 'kampus') && !str_contains($jabatan, 'bauk') && !str_contains($jabatan, 'institut'))
-            || str_contains($jabatan, 'mahasiswa')
-            || str_contains($jabatan, 'ketua umum')
-            || str_contains($jabatan, 'presiden')
-            || str_contains($jabatan, 'pelaksana')) {
-            return 'NIM';
-        }
-
-        // Kategori Dosen: WR3, BKHM, Bendahara Kampus, Prodi, Satgas PPKS, Pembina, Dosen, Kaprodi, Dekan
-        if (in_array($role, ['wr3', 'bkhm', 'bendahara', 'wr3_lpj', 'bkhm_lpj', 'prodi', 'satgas_ppks', 'pembina', 'pembimbing', 'kaprodi', 'dekan', 'dosen']) 
+        // Kategori Dosen / Pimpinan / Pembina (WR3, BKHM, Bendahara, Satgas, dsb)
+        if (in_array($role, ['wr3', 'bkhm', 'bendahara', 'wr3_lpj', 'bkhm_lpj', 'satgas_ppks', 'pembina', 'pembimbing', 'kaprodi', 'dekan', 'dosen']) 
             || str_contains($jabatan, 'rektor') 
             || str_contains($jabatan, 'bkhm') 
-            || str_contains($jabatan, 'bendahara kampus') 
-            || str_contains($jabatan, 'prodi') 
+            || str_contains($jabatan, 'bendahara kampus')
+            || str_contains($jabatan, 'bendahara pengeluaran') 
             || str_contains($jabatan, 'satgas ppks')
             || str_contains($jabatan, 'dosen')
             || str_contains($jabatan, 'pembina')
@@ -96,6 +86,15 @@ class TandaTanganDigital extends Model
             || str_contains($jabatan, 'nidn')
             || str_contains($jabatan, 'nip')) {
             return 'NIDN';
+        }
+
+        // Kategori Mahasiswa: BEM, BPM, HIMA, UKM, Ormawa, Ketua/Sekretaris/Bendahara Ormawa
+        if (in_array($role, ['bem', 'bpm', 'ormawa', 'hima', 'ukm', 'mahasiswa', 'ormawa_lpj', 'ketua', 'sekretaris', 'ketua_pelaksana', 'sekretaris_pelaksana', 'bendahara_pelaksana'])
+            || str_contains($jabatan, 'ketua umum')
+            || str_contains($jabatan, 'presiden')
+            || str_contains($jabatan, 'pelaksana')
+            || (str_contains($jabatan, 'mahasiswa') && !str_contains($jabatan, 'kemahasiswaan'))) {
+            return 'NIM';
         }
 
         return 'NIDN';

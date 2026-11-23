@@ -67,6 +67,7 @@ class PengajuanController extends Controller
 
         $validated = $request->validate([
             'jenis_pengajuan' => 'nullable|string|in:kegiatan,pengadaan_barang,pendanaan_lomba',
+            'perlu_satgas_ppks' => 'nullable|boolean',
             'nama_kegiatan' => 'required|string|max:255',
             'dana_diajukan' => 'required|numeric|min:1',
             'tanggal_pengajuan' => 'required|date',
@@ -82,16 +83,6 @@ class PengajuanController extends Controller
         // BR-04: nominal pengajuan tidak boleh melebihi sisa saldo pengaju.
         if ($error = $this->validasiBatasSaldo((float) $validated['dana_diajukan'])) {
             return back()->withInput()->withErrors(['dana_diajukan' => $error]);
-        }
-
-        // Validasi ACC Program Studi untuk HIMA
-        if (!empty($validated['program_kerja_id'])) {
-            $proker = ProgramKerja::find($validated['program_kerja_id']);
-            if ($proker && $proker->isHimaProker() && $proker->status_prodi !== 'disetujui' && $proker->status_prodi !== 'tidak_perlu') {
-                return back()->withInput()->withErrors([
-                    'program_kerja_id' => "Program kerja '{$proker->nama_proker}' belum disetujui (ACC) oleh Program Studi. Mohon koordinasikan dengan Pembina Prodi untuk mendapatkan ACC sebelum mengajukan proposal kegiatan."
-                ]);
-            }
         }
 
         // SEC-01: simpan di disk privat (bukan public)
@@ -111,6 +102,7 @@ class PengajuanController extends Controller
         $pengajuan = Pengajuan::create([
             'user_id' => Auth::id(),
             'jenis_pengajuan' => $validated['jenis_pengajuan'] ?? 'kegiatan',
+            'perlu_satgas_ppks' => $request->boolean('perlu_satgas_ppks'),
             'nama_kegiatan' => $validated['nama_kegiatan'],
             'dana_diajukan' => $validated['dana_diajukan'],
             'tanggal_pengajuan' => $validated['tanggal_pengajuan'],
@@ -173,6 +165,7 @@ class PengajuanController extends Controller
 
         $validated = $request->validate([
             'jenis_pengajuan' => 'nullable|string|in:kegiatan,pengadaan_barang,pendanaan_lomba',
+            'perlu_satgas_ppks' => 'nullable|boolean',
             'nama_kegiatan' => 'required|string|max:255',
             'dana_diajukan' => 'required|numeric|min:1',
             'tanggal_pengajuan' => 'required|date',
@@ -190,18 +183,9 @@ class PengajuanController extends Controller
             return back()->withInput()->withErrors(['dana_diajukan' => $error]);
         }
 
-        // Validasi ACC Program Studi untuk HIMA
-        if (!empty($validated['program_kerja_id'])) {
-            $proker = ProgramKerja::find($validated['program_kerja_id']);
-            if ($proker && $proker->isHimaProker() && $proker->status_prodi !== 'disetujui' && $proker->status_prodi !== 'tidak_perlu') {
-                return back()->withInput()->withErrors([
-                    'program_kerja_id' => "Program kerja '{$proker->nama_proker}' belum disetujui (ACC) oleh Program Studi. Mohon koordinasikan dengan Pembina Prodi untuk mendapatkan ACC sebelum mengajukan proposal kegiatan."
-                ]);
-            }
-        }
-
         $dataToUpdate = [
             'jenis_pengajuan' => $validated['jenis_pengajuan'] ?? ($pengajuan->jenis_pengajuan ?? 'kegiatan'),
+            'perlu_satgas_ppks' => $request->boolean('perlu_satgas_ppks'),
             'nama_kegiatan' => $validated['nama_kegiatan'],
             'dana_diajukan' => $validated['dana_diajukan'],
             'tanggal_pengajuan' => $validated['tanggal_pengajuan'],
@@ -271,10 +255,9 @@ class PengajuanController extends Controller
 
         // BR-13 & Gambaran MD §3.1: ketika revisi diajukan kembali, alur verifikasi
         // di-reset kembali ke tahap paling awal sesuai jenis pengaju:
-        // - HIMA              -> Prodi (prodi_review)
-        // - UKM               -> BEM (submitted)
-        // - BEM               -> BPM (bem_approved)
-        // - BPM               -> Satgas PPKS (ppks_review)
+        // - Ormawa (HIMA / UKM) -> BEM (submitted)
+        // - BEM                 -> BPM (bem_approved)
+        // - BPM                 -> Satgas PPKS (ppks_review)
         $isRevisi = (bool) $pengajuan->rejected_from_state_id;
 
         $user = Auth::user();
@@ -291,9 +274,6 @@ class PengajuanController extends Controller
                 $targetStateName = 'ppks_review';
                 $flashMessage = $isRevisi ? 'Revisi berhasil diajukan kembali ke Satgas PPKS (alur di-reset ke awal).' : 'Pengajuan berhasil dikirim ke Satgas PPKS.';
             }
-        } elseif ($user->isHima()) {
-            $targetStateName = 'prodi_review';
-            $flashMessage = $isRevisi ? 'Revisi berhasil diajukan kembali ke Pembina Prodi (alur di-reset ke awal).' : 'Pengajuan berhasil dikirim ke Pembina Prodi.';
         } else {
             $targetStateName = 'submitted';
             $flashMessage = $isRevisi ? 'Revisi berhasil diajukan kembali ke BEM (alur di-reset ke awal).' : 'Pengajuan berhasil dikirim ke BEM.';
@@ -354,7 +334,6 @@ class PengajuanController extends Controller
         }
 
         $allowedCancelStates = [
-            WorkflowState::PRODI_REVIEW,
             WorkflowState::SUBMITTED,
             WorkflowState::BEM_APPROVED,
             WorkflowState::PPKS_REVIEW,

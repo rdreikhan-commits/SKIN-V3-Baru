@@ -30,6 +30,10 @@
                             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             Kelola Saldo
                         </a>
+                        <a href="{{ route('bkhm.tiket-prestasi.index') }}" class="inline-flex items-center px-3.5 py-2.5 min-h-[40px] bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                            Verifikasi Prestasi &amp; Delegasi @if(($counts['tiket_prestasi'] ?? 0) > 0) <span class="ml-1.5 px-1.5 py-0.5 rounded-full bg-white text-amber-900 text-[10px] font-black">{{ $counts['tiket_prestasi'] }}</span> @endif
+                        </a>
                     </div>
                 </div>
             </div>
@@ -74,7 +78,7 @@
             </div>
 
             <!-- Grid Kartu Metrik Antrean BKHM -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3.5">
                 <!-- Verifikasi Proposal -->
                 <a href="{{ route('verifikasi.index') }}" class="group bg-white rounded-2xl border border-slate-200/80 shadow-[0_4px_16px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-blue-300 transition-all duration-200 p-3.5 flex flex-col justify-between min-h-[136px] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                     <div class="flex items-center justify-between gap-1.5 mb-2">
@@ -131,6 +135,26 @@
                     </div>
                     <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-blue-600 group-hover:text-blue-800 transition-colors">
                         <span>Kurasi</span>
+                        <span class="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+                    </div>
+                </a>
+
+                <!-- Verifikasi Prestasi & Delegasi -->
+                <a href="{{ route('bkhm.tiket-prestasi.index') }}" class="group bg-white rounded-2xl border @if(($counts['tiket_prestasi'] ?? 0) > 0) border-amber-400 shadow-[0_4px_16px_rgba(245,158,11,0.15)] @else border-slate-200/80 shadow-[0_4px_16px_rgba(0,0,0,0.03)] @endif hover:shadow-md hover:border-amber-500 transition-all duration-200 p-3.5 flex flex-col justify-between min-h-[136px] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500">
+                    <div class="flex items-center justify-between gap-1.5 mb-2">
+                        <div class="w-8 h-8 rounded-xl bg-amber-50 border border-amber-300 flex items-center justify-center text-sm shadow-2xs group-hover:scale-105 transition-transform">
+                            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full @if(($counts['tiket_prestasi'] ?? 0) > 0) bg-amber-100 text-amber-800 font-bold @else bg-slate-100 text-slate-600 @endif text-[10px]">
+                            Lomba &amp; Prestasi
+                        </span>
+                    </div>
+                    <div class="my-auto py-1">
+                        <div class="text-2xl font-extrabold font-mono text-amber-600 tracking-tight leading-none">{{ $counts['tiket_prestasi'] ?? 0 }}</div>
+                        <div class="text-xs font-bold text-slate-900 mt-1 line-clamp-1">Verifikasi Prestasi</div>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-amber-600 group-hover:text-amber-800 transition-colors">
+                        <span>Antrean</span>
                         <span class="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
                     </div>
                 </a>
@@ -292,6 +316,60 @@
                         </tbody>
                     </x-table>
                 </div>
+            </div>
+
+            <!-- Tabel Antrean Verifikasi Prestasi & Delegasi Lomba -->
+            <div class="bg-white border border-slate-200/80 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] p-6 space-y-4">
+                <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                            Antrean Verifikasi Prestasi &amp; Bantuan Delegasi Lomba (BKHM)
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Pengajuan bantuan delegasi kompetisi dan pencatatan prestasi mahasiswa</p>
+                    </div>
+                    <a href="{{ route('bkhm.tiket-prestasi.index') }}" class="text-xs font-bold text-amber-700 hover:text-amber-900 transition">Semua Prestasi &rarr;</a>
+                </div>
+
+                <x-table>
+                    <x-table.thead>
+                        <x-table.tr>
+                            <x-table.th>Kode Tiket</x-table.th>
+                            <x-table.th>Nama Pengusul</x-table.th>
+                            <x-table.th>Nama Perlombaan / Kegiatan</x-table.th>
+                            <x-table.th>Tingkat</x-table.th>
+                            <x-table.th>Status</x-table.th>
+                            <x-table.th align="center">Tindakan</x-table.th>
+                        </x-table.tr>
+                    </x-table.thead>
+                    <tbody class="divide-y divide-slate-100 bg-white text-xs">
+                        @forelse($prestasiQueue as $tp)
+                            <x-table.tr>
+                                <x-table.td class="font-mono font-bold text-slate-700 whitespace-nowrap">{{ $tp->kode_tiket }}</x-table.td>
+                                <x-table.td>
+                                    <div class="font-bold text-slate-900">{{ $tp->nama_pengaju }}</div>
+                                    <div class="text-[11px] text-slate-500">{{ $tp->nim ?: '-' }} ({{ $tp->prodi ?: '-' }})</div>
+                                </x-table.td>
+                                <x-table.td class="font-semibold text-slate-900">{{ $tp->judul }}</x-table.td>
+                                <x-table.td class="text-slate-600 whitespace-nowrap">{{ $tp->metadata['tingkat'] ?? 'Regional/Nasional' }}</x-table.td>
+                                <x-table.td>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold {{ $tp->status_badge_class }}">
+                                        {{ $tp->status_label }}
+                                    </span>
+                                </x-table.td>
+                                <x-table.td align="center" class="whitespace-nowrap">
+                                    <a href="{{ route('bkhm.tiket-prestasi.index') }}" 
+                                       class="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition min-h-[30px]">
+                                        <span>Verifikasi</span>
+                                        <svg class="w-3 h-3 text-amber-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    </a>
+                                </x-table.td>
+                            </x-table.tr>
+                        @empty
+                            <x-table.empty colspan="6" message="Tidak ada pengajuan tiket prestasi/delegasi lomba menunggu verifikasi." />
+                        @endforelse
+                    </tbody>
+                </x-table>
             </div>
 
             <!-- Tabel Antrean Verifikasi Tempat -->

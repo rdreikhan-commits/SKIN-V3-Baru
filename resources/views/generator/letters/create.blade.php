@@ -716,7 +716,7 @@
                                 jenis: 'internal',
                                 role: 'ketua',
                                 nama: '{{ addslashes(Auth::user()->nama_ketua ?? Auth::user()->name) }}',
-                                jabatan: 'Ketua',
+                                jabatan: 'Ketua Umum',
                                 nim: '{{ addslashes(Auth::user()->nim_ketua ?? '') }}',
                                 label_id: 'NIM'
                             }],
@@ -731,44 +731,52 @@
                                 bendahara: '{{ addslashes(Auth::user()->nim_bendahara ?? '') }}'
                             },
                             roleLabels: {
-                                ketua: 'Ketua Umum',
-                                sekretaris: 'Sekretaris',
-                                bendahara: 'Bendahara',
+                                ketua: 'Ketua Umum Ormawa',
+                                sekretaris: 'Sekretaris Ormawa',
+                                bendahara: 'Bendahara Ormawa',
                                 ketua_pelaksana: 'Ketua Pelaksana',
                                 sekretaris_pelaksana: 'Sekretaris Pelaksana',
                                 bendahara_pelaksana: 'Bendahara Pelaksana',
-                                pembina: 'Dosen Pembina Ormawa',
-                                pembimbing: 'Dosen Pembimbing Kegiatan',
-                                kaprodi: 'Ketua Program Studi',
-                                dekan: 'Dekan Fakultas',
-                                dosen: 'Dosen Penanggung Jawab',
-                                custom: 'Penandatangan'
+                                custom: 'Pengurus / Panitia Mahasiswa'
                             },
-                            dosenRoles: ['pembina', 'pembimbing', 'kaprodi', 'dekan', 'dosen'],
+                            presetEksternal: {
+                                pembina: { jabatan: 'Dosen Pembina Ormawa', label_id: 'NIDN' },
+                                pembimbing: { jabatan: 'Dosen Pembimbing Kegiatan', label_id: 'NIDN' },
+                                kaprodi: { jabatan: 'Ketua Program Studi (Kaprodi)', label_id: 'NIDN' },
+                                dekan: { jabatan: 'Dekan Fakultas', label_id: 'NIDN' },
+                                wr3: { jabatan: 'Wakil Rektor III', label_id: 'NIDN' },
+                                rektor: { jabatan: 'Rektor Institut Teknologi Garut', label_id: 'NIDN' },
+                                mitra: { jabatan: 'Pimpinan Mitra / Instansi Luar', label_id: 'NIK' }
+                            },
                             updateNama(idx) {
                                 let s = this.signers[idx];
                                 if (s.jenis !== 'internal') return;
                                 s.nama = this.namaMap[s.role] || '';
                                 s.nim = this.nimMap[s.role] || '';
-                                s.jabatan = this.roleLabels[s.role] || 'Penandatangan';
-                                if (this.dosenRoles.includes(s.role)) {
-                                    s.label_id = 'NIDN';
-                                } else if (['ketua', 'sekretaris', 'bendahara', 'ketua_pelaksana', 'sekretaris_pelaksana', 'bendahara_pelaksana'].includes(s.role)) {
-                                    s.label_id = 'NIM';
-                                }
+                                s.jabatan = this.roleLabels[s.role] || 'Pengurus Ormawa';
+                                s.label_id = 'NIM';
                             },
                             onJenisChange(idx) {
                                 let s = this.signers[idx];
                                 if (s.jenis === 'internal') {
-                                    s.nama = this.namaMap[s.role] || '';
-                                    s.nim = this.nimMap[s.role] || '';
-                                    s.jabatan = this.roleLabels[s.role] || 'Penandatangan';
-                                    s.label_id = this.dosenRoles.includes(s.role) ? 'NIDN' : 'NIM';
+                                    s.role = 'ketua';
+                                    s.nama = this.namaMap['ketua'] || '';
+                                    s.nim = this.nimMap['ketua'] || '';
+                                    s.jabatan = 'Ketua Umum Ormawa';
+                                    s.label_id = 'NIM';
                                 } else {
+                                    s.role = 'custom';
                                     s.nama = '';
                                     s.nim = '';
                                     s.jabatan = '';
                                     s.label_id = 'NIDN';
+                                }
+                            },
+                            applyPresetEksternal(idx, presetKey) {
+                                let s = this.signers[idx];
+                                if (this.presetEksternal[presetKey]) {
+                                    s.jabatan = this.presetEksternal[presetKey].jabatan;
+                                    s.label_id = this.presetEksternal[presetKey].label_id;
                                 }
                             },
                             addSigner() {
@@ -776,7 +784,7 @@
                                     jenis: 'internal',
                                     role: 'sekretaris',
                                     nama: this.namaMap['sekretaris'] || '',
-                                    jabatan: 'Sekretaris',
+                                    jabatan: 'Sekretaris Ormawa',
                                     nim: this.nimMap['sekretaris'] || '',
                                     label_id: 'NIM'
                                 });
@@ -788,13 +796,21 @@
                         <div class="flex items-center justify-between mb-3">
                             <div>
                                 <h3 class="font-bold text-indigo-600">Penandatangan Surat Resmi</h3>
-                                <p class="text-xs text-slate-500">Penandatangan internal menyertakan Nama &amp; Nomor Identitas (NIM untuk Mahasiswa / NIDN untuk Dosen) serta diverifikasi QR Code.</p>
+                                <p class="text-xs text-slate-500">Pilih penandatangan dokumen sesuai hierarki organisasi dan format resmi ITG.</p>
                             </div>
                             <button type="button" @click="addSigner()"
                                 class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-100 transition-colors">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                                 + Tambah Penandatangan
                             </button>
+                        </div>
+
+                        <!-- Keamanan TTD Alert -->
+                        <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 flex items-start gap-2.5">
+                            <svg class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <div>
+                                <span class="font-bold">Keamanan Tanda Tangan:</span> Tanda tangan digital kriptografis (QR Code) khusus diperuntukkan bagi <strong>Pengurus &amp; Panitia Mahasiswa (Internal)</strong> ber-NIM. Dosen, Dekan, Rektor, dan Pihak Luar menggunakan <strong>Tanda Tangan Manual Fisik</strong> (ruang tanda tangan basah &amp; cap) untuk mencegah penyalahgunaan wewenang TTD.
+                            </div>
                         </div>
 
                         <template x-for="(signer, idx) in signers" :key="idx">
@@ -808,13 +824,15 @@
                                         <select :name="'penandatangan_jenis[' + idx + ']'"
                                                 x-model="signer.jenis"
                                                 @change="onJenisChange(idx)"
-                                                class="block w-full border-gray-300 rounded-md shadow-sm text-xs">
-                                            <option value="internal">Internal (Kampus ITG)</option>
-                                            <option value="eksternal">Pihak Luar (Manual)</option>
+                                                class="block w-full border-gray-300 rounded-md shadow-sm text-xs font-medium">
+                                            <option value="internal">Internal (Pengurus Mahasiswa - QR)</option>
+                                            <option value="eksternal">Pihak Luar / Dosen / Rektor (Manual)</option>
                                         </select>
                                     </div>
+
+                                    <!-- Internal: Pilihan khusus Pengurus Mahasiswa (NIM) -->
                                     <div x-show="signer.jenis === 'internal'">
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Pilihan Jabatan</label>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Jabatan Pengurus Mahasiswa</label>
                                         <select :name="'penandatangan_role[' + idx + ']'"
                                                 x-model="signer.role"
                                                 @change="updateNama(idx)"
@@ -827,30 +845,45 @@
                                                 <option value="sekretaris_pelaksana">Sekretaris Pelaksana</option>
                                                 <option value="bendahara_pelaksana">Bendahara Pelaksana</option>
                                             </optgroup>
-                                            <optgroup label="Dosen &amp; Pembina (NIDN / NIP)">
+                                            <optgroup label="Jabatan Mahasiswa Lainnya">
+                                                <option value="custom">Pengurus / Panitia Lainnya...</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+
+                                    <!-- Eksternal: Preset Cepat Dosen / Rektor / Mitra Luar -->
+                                    <div x-show="signer.jenis === 'eksternal'">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Pilihan Cepat / Pejabat</label>
+                                        <select @change="applyPresetEksternal(idx, $event.target.value)"
+                                                class="block w-full border-gray-300 rounded-md shadow-sm text-xs bg-slate-50">
+                                            <option value="">-- Pilih Preset atau Ketik Manual --</option>
+                                            <optgroup label="Dosen &amp; Pejabat Kampus ITG">
                                                 <option value="pembina">Dosen Pembina Ormawa</option>
                                                 <option value="pembimbing">Dosen Pembimbing Kegiatan</option>
                                                 <option value="kaprodi">Ketua Program Studi (Kaprodi)</option>
                                                 <option value="dekan">Dekan Fakultas</option>
-                                                <option value="dosen">Dosen Penanggung Jawab</option>
+                                                <option value="wr3">Wakil Rektor III</option>
+                                                <option value="rektor">Rektor ITG</option>
                                             </optgroup>
-                                            <optgroup label="Lainnya">
-                                                <option value="custom">Jabatan Lainnya (Input Manual)...</option>
+                                            <optgroup label="Eksternal">
+                                                <option value="mitra">Pimpinan Mitra / Sponsor</option>
                                             </optgroup>
                                         </select>
                                     </div>
+
+                                    <!-- Input Nama Jabatan (untuk eksternal atau custom) -->
                                     <div x-show="signer.jenis === 'eksternal' || signer.role === 'custom'">
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Jabatan</label>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Jabatan Resmi</label>
                                         <input type="text"
                                                :name="'penandatangan_jabatan[' + idx + ']'"
                                                x-model="signer.jabatan"
-                                               @input="if(signer.jabatan.toLowerCase().includes('dosen') || signer.jabatan.toLowerCase().includes('pembina') || signer.jabatan.toLowerCase().includes('kaprodi') || signer.jabatan.toLowerCase().includes('dekan')) { signer.label_id = 'NIDN'; }"
                                                placeholder="Contoh: Dosen Pembina / Ketua Mitra"
                                                class="block w-full border-gray-300 rounded-md shadow-sm text-xs" />
                                     </div>
                                     <template x-if="signer.jenis === 'internal' && signer.role !== 'custom'">
                                         <input type="hidden" :name="'penandatangan_jabatan[' + idx + ']'" :value="signer.jabatan">
                                     </template>
+
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap &amp; Gelar</label>
                                         <input type="text"
@@ -859,15 +892,42 @@
                                                placeholder="Nama penandatangan..."
                                                class="block w-full border-gray-300 rounded-md shadow-sm text-xs" />
                                     </div>
+
                                     <div>
                                         <label class="block text-xs font-semibold text-slate-600 mb-1">Tipe Identitas</label>
                                         <select :name="'penandatangan_label_id[' + idx + ']'"
                                                 x-model="signer.label_id"
+                                                :disabled="signer.jenis === 'internal'"
                                                 class="block w-full border-gray-300 rounded-md shadow-sm text-xs font-semibold text-indigo-700">
-                                            <option value="NIDN">NIDN (Dosen)</option>
                                             <option value="NIM">NIM (Mahasiswa)</option>
+                                            <option value="NIDN">NIDN (Dosen)</option>
                                             <option value="NIP">NIP (Pegawai/PNS)</option>
                                             <option value="NIK">NIK (Kependudukan)</option>
+                                            <option value="ID">No. Identitas Lainnya</option>
+                                        </select>
+                                        <template x-if="signer.jenis === 'internal'">
+                                            <input type="hidden" :name="'penandatangan_label_id[' + idx + ']'" value="NIM">
+                                        </template>
+                                    </div>
+
+                                    <div class="sm:col-span-3">
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">
+                                            <span x-text="signer.label_id + ' Penandatangan'"></span>
+                                        </label>
+                                        <input type="text"
+                                               :name="'penandatangan_nim[' + idx + ']'"
+                                               x-model="signer.nim"
+                                               :placeholder="signer.label_id === 'NIDN' ? 'Contoh NIDN: 0421099301' : (signer.label_id === 'NIP' ? 'Contoh NIP: 198501152010121002' : 'Contoh NIM: 2206001')"
+                                               class="block w-full border-gray-300 rounded-md shadow-sm text-xs font-mono" />
+                                    </div>
+                                </div>
+                                <div class="flex-none pt-6">
+                                    <button type="button" @click="removeSigner(idx)" x-show="signers.length > 1" class="text-rose-500 hover:text-rose-700 p-1" title="Hapus Penandatangan">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
                                             <option value="ID">No. Identitas Lainnya</option>
                                         </select>
                                     </div>

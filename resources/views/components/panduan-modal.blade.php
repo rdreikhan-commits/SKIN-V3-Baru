@@ -52,9 +52,11 @@
                                 @elserole('bem')
                                     Halo Presidium BEM! Pelajari tata cara penelaahan awal proposal dan koordinasi agenda kegiatan ormawa.
                                 @elserole('bpm')
-                                    Halo Legislator BPM! Pelajari mekanisme verifikasi legislatif, pengawasan anggaran, dan penerbitan surat peringatan.
+                                    Halo Legislator BPM! Pelajari mekanisme verifikasi legislatif, pengawasan anggaran seluruh ormawa, dan penerbitan surat peringatan.
+                                @elserole('satgas_ppks')
+                                    Halo Tim Satgas PPKS! Panduan verifikasi pakta integritas kegiatan berisiko dan penerbitan Surat Peringatan (SP) etika mahasiswa/ormawa.
                                 @elserole('bkhm')
-                                    Halo Pembina Kemahasiswaan! Panduan verifikasi tingkat institusi, manajemen saldo kas, dan kurasi berita kampus.
+                                    Halo Pembina Kemahasiswaan! Panduan verifikasi tingkat institusi, verifikasi prestasi lomba, manajemen saldo kas, dan kurasi berita kampus.
                                 @elserole('wr3')
                                     Halo Wakil Rektor III! Panduan pengesahan tingkat pimpinan kampus dan validasi tanda tangan digital QR institusi.
                                 @elserole('bendahara')
@@ -121,7 +123,7 @@
                                     <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Pengajuan Proposal &amp; RAB (Ormawa)</h4>
                                     <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-800">Ormawa</span>
                                 </div>
-                                <p class="text-xs text-slate-600 mt-1">Ormawa mengisi formulir atau menggunakan <strong>Generator Proposal Otomatis</strong>, melampirkan rincian anggaran, dan mengklik tombol "Ajukan".</p>
+                                <p class="text-xs text-slate-600 mt-1">Ormawa mengisi formulir atau <strong>Generator Proposal Otomatis (3 Format: Kegiatan, Barang, Lomba)</strong>. Untuk kegiatan berisiko tinggi / menginap, centang opsi <em>Izin Satgas PPKS</em>.</p>
                             </div>
                         </div>
 
@@ -130,10 +132,10 @@
                             <span class="absolute -left-6 top-1 w-5 h-5 rounded-full bg-indigo-600 text-white font-bold text-[10px] flex items-center justify-center ring-4 ring-white">2</span>
                             <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 hover:bg-slate-100/70 transition">
                                 <div class="flex items-center justify-between">
-                                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Telaah Awal &amp; Sinkronisasi Proker (BEM)</h4>
+                                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Telaah Awal &amp; Sinkronisasi Kalender (BEM)</h4>
                                     <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-100 text-indigo-800">BEM</span>
                                 </div>
-                                <p class="text-xs text-slate-600 mt-1">Kementerian Terkait BEM menelaah relevansi kegiatan terhadap kalender proker ormawa sebelum diteruskan ke legislatif.</p>
+                                <p class="text-xs text-slate-600 mt-1">Kementerian BEM menelaah seluruh usulan kegiatan ormawa (HIMA &amp; UKM) untuk keselarasan kalender kampus sebelum diteruskan ke parlemen BPM.</p>
                             </div>
                         </div>
 
@@ -142,10 +144,10 @@
                             <span class="absolute -left-6 top-1 w-5 h-5 rounded-full bg-indigo-700 text-white font-bold text-[10px] flex items-center justify-center ring-4 ring-white">3</span>
                             <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 hover:bg-slate-100/70 transition">
                                 <div class="flex items-center justify-between">
-                                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Verifikasi Legislatif &amp; Plafon Anggaran (BPM)</h4>
+                                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Verifikasi Anggaran &amp; Routing Jalur (BPM)</h4>
                                     <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-100 text-indigo-800">BPM</span>
                                 </div>
-                                <p class="text-xs text-slate-600 mt-1">Komisi Anggaran BPM memeriksa kewajaran alokasi biaya dan kepatuhan terhadap undang-undang ormawa ITG.</p>
+                                <p class="text-xs text-slate-600 mt-1">Komisi Anggaran BPM memeriksa pos biaya RAB dan mengarahkan: jika dicentang butuh izin PPKS diteruskan ke <strong>Satgas PPKS</strong>, atau langsung bypass ke <strong>BKHM</strong> jika berisiko rendah/pengadaan/lomba.</p>
                             </div>
                         </div>
 
@@ -154,10 +156,10 @@
                             <span class="absolute -left-6 top-1 w-5 h-5 rounded-full bg-amber-600 text-white font-bold text-[10px] flex items-center justify-center ring-4 ring-white">4</span>
                             <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 hover:bg-slate-100/70 transition">
                                 <div class="flex items-center justify-between">
-                                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Peninjauan Administrasi Institusi (BKHM)</h4>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800">BKHM</span>
+                                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Audit Mitigasi PPKS &amp; Administrasi Institusi (BKHM)</h4>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800">Satgas &amp; BKHM</span>
                                 </div>
-                                <p class="text-xs text-slate-600 mt-1">Biro Kemahasiswaan memverifikasi kesiapan sarana, perizinan institusi, dan sisa pagu saldo kas tahunan ormawa.</p>
+                                <p class="text-xs text-slate-600 mt-1">Satgas PPKS mengaudit pakta integritas (bila dicentang), dilanjutkan BKHM yang memverifikasi kelayakan legalitas, ketersediaan sarana, dan alokasi saldo kas ormawa ke WR3.</p>
                             </div>
                         </div>
 
@@ -166,7 +168,7 @@
                             <span class="absolute -left-6 top-1 w-5 h-5 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center ring-4 ring-white">5</span>
                             <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 hover:bg-slate-100/70 transition">
                                 <div class="flex items-center justify-between">
-                                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Pengesahan Pimpinan &amp; TTD Digital (WR3)</h4>
+                                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Pengesahan Pimpinan &amp; TTD Digital SHA-256 (WR3)</h4>
                                     <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">Wakil Rektor III</span>
                                 </div>
                                 <p class="text-xs text-slate-600 mt-1">Wakil Rektor III menandatangani lembar persetujuan secara elektronik yang dilengkapi kode verifikasi QR resmi.</p>
@@ -190,10 +192,10 @@
                             <span class="absolute -left-6 top-1 w-5 h-5 rounded-full bg-rose-600 text-white font-bold text-[10px] flex items-center justify-center ring-4 ring-white">7</span>
                             <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 hover:bg-slate-100/70 transition">
                                 <div class="flex items-center justify-between">
-                                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Pelaporan Pertanggungjawaban (LPJ)</h4>
+                                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Pelaporan Pertanggungjawaban (LPJ 3 Format)</h4>
                                     <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-100 text-rose-800">Ormawa &amp; Verifikator</span>
                                 </div>
-                                <p class="text-xs text-slate-600 mt-1">Setelah kegiatan selesai, ormawa mengunggah berkas LPJ paling lambat 14 hari kerja untuk diverifikasi oleh BKHM dan WR3.</p>
+                                <p class="text-xs text-slate-600 mt-1">Ormawa mengunggah LPJ maksimal 14 hari kalender menggunakan 3 template khusus (Kegiatan, Barang, atau Lomba) untuk diverifikasi oleh BKHM.</p>
                             </div>
                         </div>
                     </div>
@@ -236,7 +238,7 @@
                     </div>
                     @endrole
 
-                    @hasanyrole('bem|bpm|bkhm|wr3')
+                    @hasanyrole('bem|bpm|satgas_ppks|bkhm|wr3')
                     <div class="space-y-3">
                         <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50">
                             <h4 class="font-bold text-slate-900 flex items-center gap-2">
@@ -274,10 +276,34 @@
                         <div class="border border-slate-200 rounded-2xl p-4 bg-amber-50/60 border-amber-200">
                             <h4 class="font-bold text-amber-950 flex items-center gap-2">
                                 <span class="w-6 h-6 rounded-lg bg-amber-200 text-amber-900 flex items-center justify-center text-xs font-bold">3</span>
-                                Penerbitan Surat Peringatan (SP)
+                                Monitoring Anggaran &amp; Penerbitan SP
                             </h4>
                             <p class="text-xs text-amber-900 mt-1 leading-relaxed">
-                                BPM memiliki wewenang menerbitkan SP internal parlemen (langsung berlaku) atau SP reguler institusi (melalui tinjauan BKHM dan pengesahan WR3) bagi ormawa yang melanggar tata tertib.
+                                Pantau serapan dana seluruh ormawa di menu <strong>Monitoring Anggaran</strong> (`/bpm/anggaran`), arahkan proposal berisiko ke Satgas PPKS (atau bypass ke BKHM), dan terbitkan Surat Peringatan parlemen bagi ormawa yang melanggar tata tertib.
+                            </p>
+                        </div>
+                        @endrole
+
+                        @role('satgas_ppks')
+                        <div class="border border-slate-200 rounded-2xl p-4 bg-purple-50/60 border-purple-200">
+                            <h4 class="font-bold text-purple-950 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-lg bg-purple-200 text-purple-900 flex items-center justify-center text-xs font-bold">3</span>
+                                Audit Izin PPKS &amp; Penerbitan SP Sanksi
+                            </h4>
+                            <p class="text-xs text-purple-900 mt-1 leading-relaxed">
+                                Audit pakta integritas kegiatan mahasiswa yang memerlukan rekomendasi PPKS di menu <strong>Verifikasi Izin &amp; PPKS</strong>, dan terbitkan Surat Peringatan (SP) untuk <em>Mahasiswa Perorangan</em> maupun <em>Organisasi Mahasiswa (ORMAWA)</em> yang diteruskan ke WR3.
+                            </p>
+                        </div>
+                        @endrole
+
+                        @role('bkhm')
+                        <div class="border border-slate-200 rounded-2xl p-4 bg-blue-50/60 border-blue-200">
+                            <h4 class="font-bold text-blue-950 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-lg bg-blue-200 text-blue-900 flex items-center justify-center text-xs font-bold">3</span>
+                                Verifikasi Prestasi &amp; Pagu Anggaran
+                            </h4>
+                            <p class="text-xs text-blue-900 mt-1 leading-relaxed">
+                                BKHM memverifikasi laporan prestasi mandiri mahasiswa umum di menu <strong>Tiket Prestasi</strong> (`/bkhm/tiket-prestasi`), mengelola pagu saldo kas tahunan ormawa, serta mengesahkan pelaporan 3 format LPJ.
                             </p>
                         </div>
                         @endrole

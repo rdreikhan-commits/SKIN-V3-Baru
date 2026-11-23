@@ -15,18 +15,17 @@ class WorkflowSeeder extends Seeder
     {
         $states = [
             ['name' => 'draft', 'label' => 'Draft', 'order_num' => 1, 'pic_role' => 'Ormawa Pengaju', 'pic_contact' => 'Ketua Ormawa / Seskab'],
-            ['name' => 'prodi_review', 'label' => 'Verifikasi Pembina Prodi', 'order_num' => 2, 'pic_role' => 'Pembina Himpunan / Kaprodi', 'pic_contact' => 'Ketua Program Studi'],
-            ['name' => 'submitted', 'label' => 'Diajukan ke BEM', 'order_num' => 3, 'pic_role' => 'Pengurus BEM', 'pic_contact' => 'Divisi Administrasi BEM'],
-            ['name' => 'bem_approved', 'label' => 'Verifikasi BPM', 'order_num' => 4, 'pic_role' => 'Pengurus BPM', 'pic_contact' => 'Komisi Pengawasan BPM'],
-            ['name' => 'ppks_review', 'label' => 'Verifikasi Satgas PPKS', 'order_num' => 5, 'pic_role' => 'Satgas PPKS ITG', 'pic_contact' => 'Satgas PPKS ITG'],
-            ['name' => 'bpm_approved', 'label' => 'Verifikasi BKHM (Tahap 1)', 'order_num' => 6, 'pic_role' => 'BKHM', 'pic_contact' => 'Bapak Encep (BKHM)'],
-            ['name' => 'bkhm_approved', 'label' => 'Verifikasi WR3', 'order_num' => 7, 'pic_role' => 'Wakil Rektor III', 'pic_contact' => 'Kantor WR III'],
-            ['name' => 'wr3_approved', 'label' => 'Disetujui WR3 - Siap Diajukan ke Bendahara', 'order_num' => 8, 'pic_role' => 'BKHM (Tahap 2) / Bendahara', 'pic_contact' => 'Bagian Keuangan'],
-            ['name' => 'to_treasurer', 'label' => 'Diajukan ke Bendahara', 'order_num' => 9, 'pic_role' => 'Bendahara Kampus', 'pic_contact' => 'Bagian Keuangan/Bendahara'],
-            ['name' => 'funds_disbursed', 'label' => 'Dana Cair', 'order_num' => 10, 'pic_role' => 'Ormawa Pengaju', 'pic_contact' => 'Pelaksana Kegiatan'],
-            ['name' => 'lpj_submitted', 'label' => 'LPJ Diajukan', 'order_num' => 11, 'pic_role' => 'BKHM', 'pic_contact' => 'Bapak Encep (BKHM)'],
-            ['name' => 'lpj_wr3_review', 'label' => 'Verifikasi LPJ WR3', 'order_num' => 12, 'pic_role' => 'Wakil Rektor III', 'pic_contact' => 'Kantor WR III'],
-            ['name' => 'completed', 'label' => 'Selesai', 'order_num' => 13, 'pic_role' => 'Sistem / Arsip', 'pic_contact' => 'Arsip Digital SKIN'],
+            ['name' => 'submitted', 'label' => 'Diajukan ke BEM', 'order_num' => 2, 'pic_role' => 'Pengurus BEM', 'pic_contact' => 'Divisi Administrasi BEM'],
+            ['name' => 'bem_approved', 'label' => 'Verifikasi BPM', 'order_num' => 3, 'pic_role' => 'Pengurus BPM', 'pic_contact' => 'Komisi Pengawasan BPM'],
+            ['name' => 'ppks_review', 'label' => 'Verifikasi Satgas PPKS', 'order_num' => 4, 'pic_role' => 'Satgas PPKS ITG', 'pic_contact' => 'Satgas PPKS ITG'],
+            ['name' => 'bpm_approved', 'label' => 'Verifikasi BKHM (Tahap 1)', 'order_num' => 5, 'pic_role' => 'BKHM', 'pic_contact' => 'Bapak Encep (BKHM)'],
+            ['name' => 'bkhm_approved', 'label' => 'Verifikasi WR3', 'order_num' => 6, 'pic_role' => 'Wakil Rektor III', 'pic_contact' => 'Kantor WR III'],
+            ['name' => 'wr3_approved', 'label' => 'Disetujui WR3 - Siap Diajukan ke Bendahara', 'order_num' => 7, 'pic_role' => 'BKHM (Tahap 2) / Bendahara', 'pic_contact' => 'Bagian Keuangan'],
+            ['name' => 'to_treasurer', 'label' => 'Diajukan ke Bendahara', 'order_num' => 8, 'pic_role' => 'Bendahara Kampus', 'pic_contact' => 'Bagian Keuangan/Bendahara'],
+            ['name' => 'funds_disbursed', 'label' => 'Dana Cair', 'order_num' => 9, 'pic_role' => 'Ormawa Pengaju', 'pic_contact' => 'Pelaksana Kegiatan'],
+            ['name' => 'lpj_submitted', 'label' => 'LPJ Diajukan', 'order_num' => 10, 'pic_role' => 'BKHM', 'pic_contact' => 'Bapak Encep (BKHM)'],
+            ['name' => 'lpj_wr3_review', 'label' => 'Verifikasi LPJ WR3', 'order_num' => 11, 'pic_role' => 'Wakil Rektor III', 'pic_contact' => 'Kantor WR III'],
+            ['name' => 'completed', 'label' => 'Selesai', 'order_num' => 12, 'pic_role' => 'Sistem / Arsip', 'pic_contact' => 'Arsip Digital SKIN'],
             ['name' => 'cancelled', 'label' => 'Dibatalkan Pengaju', 'order_num' => 98, 'pic_role' => 'Ormawa Pengaju', 'pic_contact' => 'Dibatalkan oleh Pengaju'],
             ['name' => 'rejected', 'label' => 'Ditolak', 'order_num' => 99, 'pic_role' => 'Ormawa Pengaju', 'pic_contact' => 'Lihat Catatan Kendala'],
         ];
@@ -37,16 +36,8 @@ class WorkflowSeeder extends Seeder
 
         // Setup transitions
         $transitions = [
-            // Pengaju Ormawa (UKM): ke BEM
+            // Pengaju Ormawa (HIMA & UKM): langsung ke BEM
             ['from' => 'draft', 'to' => 'submitted', 'label' => 'Ajukan', 'role' => 'ormawa'],
-
-            // Pengaju HIMA: ke Pembina Prodi
-            ['from' => 'draft', 'to' => 'prodi_review', 'label' => 'Ajukan ke Pembina Prodi', 'role' => 'ormawa'],
-
-            // Pembina Prodi
-            ['from' => 'prodi_review', 'to' => 'submitted', 'label' => 'Setujui', 'role' => 'prodi'],
-            ['from' => 'prodi_review', 'to' => 'rejected', 'label' => 'Tolak', 'role' => 'prodi'],
-            ['from' => 'prodi_review', 'to' => 'draft', 'label' => 'Revisi', 'role' => 'prodi'],
 
             // Pengaju BEM: mulai dari BPM (lewati verifikasi BEM sendiri)
             ['from' => 'draft', 'to' => 'bem_approved', 'label' => 'Ajukan ke BPM', 'role' => 'bem'],

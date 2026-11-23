@@ -120,10 +120,11 @@ class PerbaikanKomunikasiDanNotifikasiTest extends TestCase
         $submittedState = WorkflowState::where('name', 'submitted')->first();
         $pengajuan = Pengajuan::create([
             'user_id' => $this->ormawa->id,
-            'nama_kegiatan' => 'Pekan Olahraga Mahasiswa',
+            'nama_kegiatan' => 'Pengadaan Fasilitas Ormawa',
             'dana_diajukan' => 3000000,
             'tanggal_pengajuan' => now()->toDateString(),
             'workflow_state_id' => $submittedState->id,
+            'jenis_pengajuan' => 'pengadaan_barang',
         ]);
 
         // 1. BEM memverifikasi dan menyetujui -> harus ada notifikasi ke BPM
@@ -143,9 +144,11 @@ class PerbaikanKomunikasiDanNotifikasiTest extends TestCase
         $this->assertStringContainsString('BEM', $bpmNotification->pesan);
         $this->assertStringContainsString('BPM', $bpmNotification->pesan);
 
-        // 2. BPM memverifikasi dan menyetujui -> harus ada notifikasi ke BKHM
+        // 2. BPM memverifikasi dan menyetujui langsung ke BKHM -> harus ada notifikasi ke BKHM
         $pengajuan->refresh();
+        $bpmApprovedState = WorkflowState::where('name', 'bpm_approved')->first();
         $transitionBpmToBkhm = WorkflowTransition::where('from_state_id', $pengajuan->workflow_state_id)
+            ->where('to_state_id', $bpmApprovedState->id)
             ->where('required_role', 'bpm')
             ->first();
 

@@ -38,12 +38,6 @@ class VerifikasiController extends Controller
         $query = Pengajuan::whereIn('workflow_state_id', $allowedStateIds)
             ->with(['user', 'state', 'programKerja']);
 
-        // Khusus Pembina Prodi: batasi antrean hanya untuk HIMA di prodinya
-        if ($userRole === 'prodi' && Auth::user()->prodi) {
-            $userProdi = Auth::user()->prodi;
-            $query->whereHas('user', fn($q) => $q->where('prodi', $userProdi));
-        }
-
         if ($request->filled('status')) {
             $status = $request->status;
             if ($status === 'siap_bendahara') {
@@ -67,10 +61,6 @@ class VerifikasiController extends Controller
     public function show(Pengajuan $pengajuan)
     {
         $userRole = Auth::user()->roles->first()->name;
-        
-        if ($userRole === 'prodi' && Auth::user()->prodi && $pengajuan->user?->prodi !== Auth::user()->prodi) {
-            abort(403, 'Anda hanya dapat memverifikasi pengajuan dari Himpunan Mahasiswa program studi Anda.');
-        }
 
         if ($userRole === 'satgas_ppks' && $pengajuan->isBypassPpks()) {
             abort(403, 'Pengajuan ini adalah permohonan dana non-kegiatan yang tidak melalui Satgas PPKS.');
@@ -125,10 +115,6 @@ class VerifikasiController extends Controller
 
         $transition = WorkflowTransition::with(['fromState', 'toState'])->findOrFail($request->transition_id);
         $userRole = Auth::user()->roles->first()->name;
-
-        if ($userRole === 'prodi' && Auth::user()->prodi && $pengajuan->user?->prodi !== Auth::user()->prodi) {
-            abort(403, 'Aksi tidak diizinkan untuk program studi ini.');
-        }
 
         if ($userRole === 'satgas_ppks' && $pengajuan->isBypassPpks()) {
             abort(403, 'Pengajuan ini adalah permohonan dana non-kegiatan yang tidak melalui Satgas PPKS.');
@@ -193,14 +179,7 @@ class VerifikasiController extends Controller
             $dataToUpdate['evaluasi_termin_ok'] = true;
         }
 
-        // Catat pengesahan spesifik Pembina Prodi / Satgas PPKS
-        if ($userRole === 'prodi' && ! $isRejecting) {
-            $dataToUpdate['verified_prodi_at'] = now();
-            if ($request->filled('catatan')) {
-                $dataToUpdate['catatan_prodi'] = $request->catatan;
-            }
-        }
-
+        // Catat pengesahan spesifik Satgas PPKS
         if ($userRole === 'satgas_ppks' && ! $isRejecting) {
             $dataToUpdate['verified_ppks_at'] = now();
             if ($request->filled('catatan')) {
@@ -259,7 +238,6 @@ class VerifikasiController extends Controller
 
             if ($nextRole) {
                 $nextRoleLabel = match ($nextRole) {
-                    'prodi' => 'Pembina Prodi',
                     'satgas_ppks' => 'Satgas PPKS',
                     'bem' => 'BEM',
                     'bpm' => 'BPM',

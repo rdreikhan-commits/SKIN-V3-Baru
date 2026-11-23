@@ -3,10 +3,10 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
                 <h2 class="font-bold text-xl text-slate-900 leading-tight">
-                    {{ __('Daftar Pengajuan Anggaran & Proposal') }}
+                    {{ Auth::user()->isHima() ? __('Daftar Pengajuan Dana Non-Akademik') : __('Daftar Pengajuan Anggaran & Proposal') }}
                 </h2>
                 <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
-                    Kelola dan pantau seluruh riwayat proposal kegiatan ormawa beserta status alur verifikasinya.
+                    {{ Auth::user()->isHima() ? __('Kelola dan pantau riwayat pengajuan dana non-akademik HIMA beserta status alur verifikasinya.') : __('Kelola dan pantau seluruh riwayat proposal kegiatan ormawa beserta status alur verifikasinya.') }}
                 </p>
             </div>
             @if(isset($pengajuans))
@@ -28,7 +28,7 @@
                     <svg class="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                     </svg>
-                    <span>Buat Pengajuan Baru</span>
+                    <span>{{ Auth::user()->isHima() ? 'Ajukan Dana Non-Akademik' : 'Buat Pengajuan Baru' }}</span>
                 </a>
 
                 {{-- Filter & Pencarian --}}

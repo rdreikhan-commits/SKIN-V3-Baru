@@ -199,6 +199,7 @@ class PermohonanDanaNonKegiatanTest extends TestCase
         $pengajuan = Pengajuan::create([
             'user_id' => $ormawa->id,
             'jenis_pengajuan' => 'kegiatan',
+            'perlu_satgas_ppks' => true,
             'nama_kegiatan' => 'Malam Keakraban & LKMM Mahasiswa Baru',
             'dana_diajukan' => 5000000,
             'tanggal_pengajuan' => now()->format('Y-m-d'),

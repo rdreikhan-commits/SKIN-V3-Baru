@@ -1,16 +1,25 @@
 @php
     $c = is_string($lpj->content) ? (json_decode($lpj->content, true) ?: []) : (array) $lpj->content;
     $meta = $lpj->metadata ?? [];
+    $jenisLpj = $c['jenis_lpj'] ?? ($meta['jenis_lpj'] ?? 'kegiatan');
     $keuangan = $meta['keuangan_items'] ?? [];
     $daftarHadir = $meta['daftar_hadir_items'] ?? [];
+    $barangItems = $meta['barang_items'] ?? [];
+    $delegasiItems = $meta['delegasi_items'] ?? [];
     $fotoDokumentasi = $meta['foto_dokumentasi'] ?? [];
     $buktiStruk = $meta['bukti_struk'] ?? [];
 
     $pengajuan = $pengajuan ?? null;
     $ormawaUser = $pengajuan?->user ?? $proposal?->user ?? $lpj?->user;
     $tahunAkademik = $c['tahun_akademik'] ?? ($meta['tahun_akademik'] ?? '2024-2025');
-    $namaKegiatan = $pengajuan?->nama_kegiatan ?? $proposal?->nama_kegiatan ?? ($lpj?->perihal ? str_replace('Laporan Pertanggungjawaban (LPJ) - ', '', $lpj->perihal) : 'KEGIATAN MAHASISWA');
+    $namaKegiatan = $pengajuan?->nama_kegiatan ?? $proposal?->nama_kegiatan ?? ($lpj?->perihal ? preg_replace('/^Laporan Pertanggungjawaban \(LPJ\)( Kegiatan| Pengadaan Barang| Delegasi Perlombaan)? - /', '', $lpj->perihal) : 'KEGIATAN MAHASISWA');
     $namaOrmawa = $ormawaUser?->name ?? 'HIMPUNAN MAHASISWA INFORMATIKA';
+
+    $judulDokumen = match($jenisLpj) {
+        'pengadaan_barang' => 'LAPORAN PERTANGGUNGJAWABAN PENGADAAN BARANG & INVENTARIS',
+        'pendanaan_lomba' => 'LAPORAN PERTANGGUNGJAWABAN DELEGASI PERLOMBAAN MAHASISWA',
+        default => 'LAPORAN'
+    };
 
     // Logo Ormawa path
     $ormawaLogoPath = null;
@@ -26,7 +35,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Laporan Kegiatan - {{ $namaKegiatan }}</title>
+    <title>{{ $judulDokumen }} - {{ $namaKegiatan }}</title>
     <style>
         @page {
             size: A4;
@@ -126,8 +135,8 @@
         @endif
     </div>
 
-    <div class="section-header-box" style="margin-top: 0; width: 70%; margin-left: auto; margin-right: auto;">
-        LAPORAN
+    <div class="section-header-box" style="margin-top: 0; width: 75%; margin-left: auto; margin-right: auto;">
+        {{ $judulDokumen }}
     </div>
 
     <div class="main-title" style="margin-top: 6px;">
@@ -136,73 +145,226 @@
         <span style="font-size: 11pt; font-weight: bold;">TAHUN AKADEMIK {{ strtoupper($tahunAkademik) }}</span>
     </div>
 
-    <!-- Poin A -->
-    <div class="section-header-box">A. Nama Kegiatan</div>
-    <div style="text-align: center; font-weight: bold; margin: 4px 0 10px 0;">
-        {{ strtoupper($namaKegiatan) }}
-    </div>
+    @if($jenisLpj === 'pengadaan_barang')
+        <!-- ================= BATANG TUBUH LPJ PENGADAAN BARANG ================= -->
+        <div class="section-header-box">A. Nama Pengadaan &amp; Belanja Inventaris</div>
+        <div style="text-align: center; font-weight: bold; margin: 4px 0 10px 0;">
+            {{ strtoupper($namaKegiatan) }}
+        </div>
 
-    <!-- Poin B -->
-    <div class="section-header-box">B. Waktu dan Tempat Pelaksanaan</div>
-    <table style="width: 100%; border: none; font-size: 11pt; margin-top: 4px; border-collapse: collapse;">
-        <tr>
-            <td style="width: 100px; vertical-align: top; border: none; padding: 2px 0;">Waktu</td>
-            <td style="width: 15px; vertical-align: top; border: none; padding: 2px 0;">:</td>
-            <td style="border: none; padding: 2px 0;">
-                {{ $c['waktu_hari_tanggal'] ?? '-' }}<br>
-                {{ $c['waktu_jam'] ?? '' }}
-            </td>
-        </tr>
-        <tr>
-            <td style="vertical-align: top; border: none; padding: 2px 0;">Tempat</td>
-            <td style="vertical-align: top; border: none; padding: 2px 0;">:</td>
-            <td style="border: none; padding: 2px 0;">
-                {!! nl2br(e($c['tempat'] ?? '-')) !!}
-            </td>
-        </tr>
-    </table>
+        <div class="section-header-box">B. Tanggal Pembelian dan Lokasi Penempatan Aset</div>
+        <table style="width: 100%; border: none; font-size: 11pt; margin-top: 4px; border-collapse: collapse;">
+            <tr>
+                <td style="width: 170px; vertical-align: top; border: none; padding: 2px 0;">Tanggal Pembelian / Terima</td>
+                <td style="width: 15px; vertical-align: top; border: none; padding: 2px 0;">:</td>
+                <td style="border: none; padding: 2px 0;">{{ $c['waktu_hari_tanggal'] ?? '-' }}</td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">Lokasi Penempatan / Simpan</td>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">:</td>
+                <td style="border: none; padding: 2px 0;">{{ $c['lokasi_penempatan'] ?? ($c['tempat'] ?? '-') }}</td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">Penanggung Jawab Aset</td>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">:</td>
+                <td style="border: none; padding: 2px 0;">{{ $c['penanggung_jawab_aset'] ?? 'Divisi Rumah Tangga & Inventaris' }}</td>
+            </tr>
+        </table>
 
-    <!-- Poin C -->
-    <div class="section-header-box">C. Tujuan Kegiatan</div>
-    <p>{!! nl2br(e($c['tujuan_kegiatan'] ?? ($c['pendahuluan'] ?? '-'))) !!}</p>
+        <div class="section-header-box">C. Latar Belakang &amp; Urgensi Pengadaan</div>
+        <p>{!! nl2br(e($c['urgensi_pengadaan'] ?? ($c['tujuan_kegiatan'] ?? ($c['pendahuluan'] ?? '-')))) !!}</p>
 
-    <!-- Poin D -->
-    <div class="section-header-box">D. Sasaran dan Ruang Lingkup Kegiatan</div>
-    <p>Sasaran dalam kegiatan ini adalah {!! nl2br(e($c['sasaran_kegiatan'] ?? 'seluruh mahasiswa Institut Teknologi Garut.')) !!}</p>
-    <p style="margin-top: 6px;">Adapun ruang lingkup kegiatan ini mencakup pembahasan mengenai:</p>
-    <p style="white-space: pre-wrap; margin-left: 10px;">{!! str_replace('▪', '&bull;', nl2br(e($c['ruang_lingkup'] ?? '-'))) !!}</p>
+        <div class="section-header-box">D. Rincian Pemanfaatan Inventaris</div>
+        <p>{!! nl2br(e($c['pemanfaatan_aset'] ?? ($c['sasaran_kegiatan'] ?? '-'))) !!}</p>
 
-    <!-- Poin E -->
-    <div class="section-header-box">E. Metode Kegiatan</div>
-    <p>{!! nl2br(e($c['metode_kegiatan'] ?? '-')) !!}</p>
-    @if(!empty($c['tahapan_kegiatan']))
-        <p style="margin-top: 6px; white-space: pre-wrap;">{!! str_replace('▪', '&bull;', nl2br(e($c['tahapan_kegiatan']))) !!}</p>
+        <div class="section-header-box">E. Berita Acara Penerimaan Barang (BAST)</div>
+        <p>{!! nl2br(e($c['bast_klausul'] ?? ($c['metode_kegiatan'] ?? '-'))) !!}</p>
+
+        <div class="section-header-box">F. SOP Pemeliharaan &amp; Tata Kelola Aset</div>
+        <p>{!! nl2br(e($c['sop_pemeliharaan'] ?? '-')) !!}</p>
+
+        @if(!empty($barangItems))
+        <div class="section-header-box">G. Rincian Spesifikasi &amp; Kondisi Fisik Barang</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 30px;">No</th>
+                    <th>Nama Barang / Alat</th>
+                    <th>Merk / Tipe / Spesifikasi</th>
+                    <th style="width: 70px;">Jumlah</th>
+                    <th style="width: 100px;">Kondisi</th>
+                    <th style="width: 120px;">Lokasi Simpan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($barangItems as $bIdx => $bRow)
+                    <tr>
+                        <td style="text-align: center;">{{ $bIdx + 1 }}</td>
+                        <td style="font-weight: bold;">{{ $bRow['nama'] ?? '-' }}</td>
+                        <td>{{ $bRow['spesifikasi'] ?? '-' }}</td>
+                        <td style="text-align: center;">{{ $bRow['jumlah'] ?? '1 Unit' }}</td>
+                        <td>{{ $bRow['kondisi'] ?? 'Baik' }}</td>
+                        <td>{{ $bRow['lokasi'] ?? '-' }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endif
+
+        <div class="section-header-box">H. Hambatan &amp; Upaya Mengatasi</div>
+        <p><strong>Hambatan:</strong></p>
+        <p style="white-space: pre-wrap; margin-left: 10px;">{!! nl2br(e($c['hambatan'] ?? '-')) !!}</p>
+        <p style="margin-top: 4px;"><strong>Upaya mengatasi:</strong></p>
+        <p style="white-space: pre-wrap; margin-left: 10px;">{!! nl2br(e($c['upaya_mengatasi'] ?? '-')) !!}</p>
+
+        <div class="section-header-box">I. Penutup</div>
+        <p>{!! nl2br(e($c['penutup'] ?? 'Demikian laporan pengadaan barang inventaris ini dibuat dengan sebenar-benarnya demi akuntabilitas ormawa Institut Teknologi Garut.')) !!}</p>
+
+    @elseif($jenisLpj === 'pendanaan_lomba')
+        <!-- ================= BATANG TUBUH LPJ DELEGASI PERLOMBAAN ================= -->
+        <div class="section-header-box">A. Nama Kejuaraan &amp; Perlombaan</div>
+        <div style="text-align: center; font-weight: bold; margin: 4px 0 10px 0;">
+            {{ strtoupper($namaKegiatan) }}
+        </div>
+
+        <div class="section-header-box">B. Penyelenggara, Tingkat &amp; Tempat Perlombaan</div>
+        <table style="width: 100%; border: none; font-size: 11pt; margin-top: 4px; border-collapse: collapse;">
+            <tr>
+                <td style="width: 170px; vertical-align: top; border: none; padding: 2px 0;">Lembaga Penyelenggara</td>
+                <td style="width: 15px; vertical-align: top; border: none; padding: 2px 0;">:</td>
+                <td style="border: none; padding: 2px 0;">{{ $c['penyelenggara_lomba'] ?? '-' }}</td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">Tingkat Kejuaraan</td>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">:</td>
+                <td style="border: none; padding: 2px 0; font-weight: bold;">{{ $c['tingkat_kejuaraan'] ?? 'Nasional' }}</td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">Waktu Pelaksanaan</td>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">:</td>
+                <td style="border: none; padding: 2px 0;">{{ $c['waktu_hari_tanggal'] ?? '-' }}</td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">Tempat / Venue</td>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">:</td>
+                <td style="border: none; padding: 2px 0;">{{ $c['tempat'] ?? '-' }}</td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">Dosen Pembimbing</td>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">:</td>
+                <td style="border: none; padding: 2px 0;">{{ $c['dosen_pendamping'] ?? '-' }}</td>
+            </tr>
+        </table>
+
+        <div class="section-header-box">C. Tujuan Keikutsertaan Delegasi</div>
+        <p>{!! nl2br(e($c['tujuan_kegiatan'] ?? ($c['pendahuluan'] ?? '-'))) !!}</p>
+
+        <div class="section-header-box">D. Hasil Capaian Prestasi &amp; Kejuaraan</div>
+        <div style="background-color: #f0fdf4; border: 1.5px solid #16a34a; padding: 8px 12px; margin: 6px 0; font-weight: bold;">
+            {!! nl2br(e($c['capaian_prestasi'] ?? ($c['indikator_keberhasilan'] ?? '-'))) !!}
+        </div>
+
+        <div class="section-header-box">E. Tahapan Babak Kompetisi yang Dilalui</div>
+        <p style="white-space: pre-wrap; margin-left: 10px;">{!! str_replace('▪', '&bull;', nl2br(e($c['tahapan_seleksi'] ?? ($c['tahapan_kegiatan'] ?? '-')))) !!}</p>
+
+        @if(!empty($delegasiItems))
+        <div class="section-header-box">F. Daftar Kontingen Delegasi Mahasiswa</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 30px;">No</th>
+                    <th>Nama Lengkap Mahasiswa</th>
+                    <th style="width: 90px;">NIM</th>
+                    <th style="width: 140px;">Program Studi</th>
+                    <th style="width: 130px;">Peran dalam Tim</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($delegasiItems as $dIdx => $dRow)
+                    <tr>
+                        <td style="text-align: center;">{{ $dIdx + 1 }}</td>
+                        <td style="font-weight: bold;">{{ $dRow['nama'] ?? '-' }}</td>
+                        <td style="text-align: center; font-family: monospace;">{{ $dRow['nim'] ?? '-' }}</td>
+                        <td>{{ $dRow['prodi'] ?? '-' }}</td>
+                        <td>{{ $dRow['peran'] ?? '-' }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endif
+
+        <div class="section-header-box">G. Evaluasi Pertandingan &amp; Pengalaman Delegasi</div>
+        <p>{!! nl2br(e($c['evaluasi_lomba'] ?? '-')) !!}</p>
+
+        <div class="section-header-box">H. Hambatan &amp; Upaya Mengatasi</div>
+        <p><strong>Hambatan:</strong></p>
+        <p style="white-space: pre-wrap; margin-left: 10px;">{!! nl2br(e($c['hambatan'] ?? '-')) !!}</p>
+        <p style="margin-top: 4px;"><strong>Upaya mengatasi:</strong></p>
+        <p style="white-space: pre-wrap; margin-left: 10px;">{!! nl2br(e($c['upaya_mengatasi'] ?? '-')) !!}</p>
+
+        <div class="section-header-box">I. Penutup &amp; Rekomendasi Delegasi</div>
+        <p>{!! nl2br(e($c['penutup'] ?? 'Demikian laporan delegasi perlombaan ini dibuat demi kebanggaan almamater Institut Teknologi Garut.')) !!}</p>
+
+    @else
+        <!-- ================= BATANG TUBUH LPJ KEGIATAN MAHASISWA ================= -->
+        <div class="section-header-box">A. Nama Kegiatan</div>
+        <div style="text-align: center; font-weight: bold; margin: 4px 0 10px 0;">
+            {{ strtoupper($namaKegiatan) }}
+        </div>
+
+        <div class="section-header-box">B. Waktu dan Tempat Pelaksanaan</div>
+        <table style="width: 100%; border: none; font-size: 11pt; margin-top: 4px; border-collapse: collapse;">
+            <tr>
+                <td style="width: 100px; vertical-align: top; border: none; padding: 2px 0;">Waktu</td>
+                <td style="width: 15px; vertical-align: top; border: none; padding: 2px 0;">:</td>
+                <td style="border: none; padding: 2px 0;">
+                    {{ $c['waktu_hari_tanggal'] ?? '-' }}<br>
+                    {{ $c['waktu_jam'] ?? '' }}
+                </td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">Tempat</td>
+                <td style="vertical-align: top; border: none; padding: 2px 0;">:</td>
+                <td style="border: none; padding: 2px 0;">
+                    {!! nl2br(e($c['tempat'] ?? '-')) !!}
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-header-box">C. Tujuan Kegiatan</div>
+        <p>{!! nl2br(e($c['tujuan_kegiatan'] ?? ($c['pendahuluan'] ?? '-'))) !!}</p>
+
+        <div class="section-header-box">D. Sasaran dan Ruang Lingkup Kegiatan</div>
+        <p>Sasaran dalam kegiatan ini adalah {!! nl2br(e($c['sasaran_kegiatan'] ?? 'seluruh mahasiswa Institut Teknologi Garut.')) !!}</p>
+        <p style="margin-top: 6px;">Adapun ruang lingkup kegiatan ini mencakup pembahasan mengenai:</p>
+        <p style="white-space: pre-wrap; margin-left: 10px;">{!! str_replace('▪', '&bull;', nl2br(e($c['ruang_lingkup'] ?? '-'))) !!}</p>
+
+        <div class="section-header-box">E. Metode Kegiatan</div>
+        <p>{!! nl2br(e($c['metode_kegiatan'] ?? '-')) !!}</p>
+        @if(!empty($c['tahapan_kegiatan']))
+            <p style="margin-top: 6px; white-space: pre-wrap;">{!! str_replace('▪', '&bull;', nl2br(e($c['tahapan_kegiatan']))) !!}</p>
+        @endif
+
+        <div class="section-header-box">F. Peserta</div>
+        <p>{!! nl2br(e($c['peserta_deskripsi'] ?? 'Peserta yang hadir dalam kegiatan ini terlampir pada daftar hadir terlampir.')) !!}</p>
+
+        <div class="section-header-box">G. Jadwal Kegiatan</div>
+        <div style="font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-height: 1.5; white-space: pre-wrap; background: #fafafa; padding: 8px; border: 1px dashed #666;">{{ $c['jadwal_kegiatan'] ?? '-' }}</div>
+
+        <div class="section-header-box">H. Indikator Keberhasilan</div>
+        <p>Indikator keberhasilan kegiatannya adalah:<br>{!! nl2br(e($c['indikator_keberhasilan'] ?? ($c['hasil_kegiatan'] ?? '-'))) !!}</p>
+
+        <div class="section-header-box">I. Hambatan</div>
+        <p>Adapun hambatan-hambatan kegiatan yang terjadi adalah sebagai berikut:</p>
+        <p style="white-space: pre-wrap; margin-left: 10px;">{!! nl2br(e($c['hambatan'] ?? '-')) !!}</p>
+        <p style="margin-top: 6px;"><strong>Upaya mengatasi:</strong></p>
+        <p style="white-space: pre-wrap; margin-left: 10px;">{!! nl2br(e($c['upaya_mengatasi'] ?? ($c['saran'] ?? '-'))) !!}</p>
+
+        <div class="section-header-box">K. Penutup</div>
+        <p>{!! nl2br(e($c['penutup'] ?? 'Demikian laporan kegiatan ini dibuat dengan maksud untuk memberikan gambaran pertanggungjawaban di masa yang akan datang demi kelangsungan Institut Teknologi Garut.')) !!}</p>
     @endif
 
-    <!-- Poin F -->
-    <div class="section-header-box">F. Peserta</div>
-    <p>{!! nl2br(e($c['peserta_deskripsi'] ?? 'Peserta yang hadir dalam kegiatan ini terlampir pada daftar hadir terlampir.')) !!}</p>
-
-    <!-- Poin G -->
-    <div class="section-header-box">G. Jadwal Kegiatan</div>
-    <div style="font-family: 'Courier New', Courier, monospace; font-size: 10pt; line-height: 1.5; white-space: pre-wrap; background: #fafafa; padding: 8px; border: 1px dashed #666;">{{ $c['jadwal_kegiatan'] ?? '-' }}</div>
-
-    <!-- Poin H -->
-    <div class="section-header-box">H. Indikator Keberhasilan</div>
-    <p>Indikator keberhasilan kegiatannya adalah:<br>{!! nl2br(e($c['indikator_keberhasilan'] ?? ($c['hasil_kegiatan'] ?? '-'))) !!}</p>
-
-    <!-- Poin I -->
-    <div class="section-header-box">I. Hambatan</div>
-    <p>Adapun hambatan-hambatan kegiatan yang terjadi adalah sebagai berikut:</p>
-    <p style="white-space: pre-wrap; margin-left: 10px;">{!! nl2br(e($c['hambatan'] ?? '-')) !!}</p>
-    <p style="margin-top: 6px;"><strong>Upaya mengatasi:</strong></p>
-    <p style="white-space: pre-wrap; margin-left: 10px;">{!! nl2br(e($c['upaya_mengatasi'] ?? ($c['saran'] ?? '-'))) !!}</p>
-
-    <!-- Poin K -->
-    <div class="section-header-box">K. Penutup</div>
-    <p>{!! nl2br(e($c['penutup'] ?? 'Demikian laporan kegiatan ini dibuat dengan maksud untuk memberikan gambaran pertanggungjawaban di masa yang akan datang demi kelangsungan Institut Teknologi Garut.')) !!}</p>
-
-    <!-- BLOK TANDA TANGAN 4 PIHAK -->
+    <!-- ================= BLOK TANDA TANGAN 4 PIHAK STANDAR ITG ================= -->
     <div class="avoid-break" style="margin-top: 25px;">
         <div style="text-align: right; margin-bottom: 10px;">
             Garut, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}
@@ -211,7 +373,13 @@
         @php
             $signers = $meta['penandatangan_list'] ?? [];
             $ketuaOrmawa = $signers[0] ?? ['nama' => ($ormawaUser->nama_ketua ?? $ormawaUser->name), 'jabatan' => 'Ketua Ormawa', 'nim' => ($ormawaUser->nim_ketua ?? null)];
-            $ketuaPelaksana = $signers[1] ?? ['nama' => ($ormawaUser->nama_sekretaris ?? 'Nama Pelaksana'), 'jabatan' => 'Ketua Pelaksana', 'nim' => ($ormawaUser->nim_sekretaris ?? null)];
+            
+            $defaultJabatanPelaksana = match($jenisLpj) {
+                'pengadaan_barang' => 'Penanggung Jawab Inventaris',
+                'pendanaan_lomba' => 'Ketua Tim Delegasi',
+                default => 'Ketua Pelaksana'
+            };
+            $ketuaPelaksana = $signers[1] ?? ['nama' => ($ormawaUser->nama_sekretaris ?? 'Nama Pelaksana'), 'jabatan' => $defaultJabatanPelaksana, 'nim' => ($ormawaUser->nim_sekretaris ?? null)];
             if (!empty($signers[1]['nim'])) {
                 $ketuaPelaksana['nim'] = $signers[1]['nim'];
             }
@@ -240,9 +408,10 @@
                 ?? ($lpj?->signatures_by_index[3] ?? null);
         @endphp
 
-        <!-- Baris 1: Ketua Ormawa & Ketua Pelaksana -->
+        <!-- Baris 1: Ketua Ormawa & Penanggung Jawab Pelaksana -->
         <table style="width: 100%; border: none; border-collapse: collapse; text-align: center;">
             <tr>
+                <td style="width: 50%; border: none; vertical-align: top; padding: 0 10px;">
                     <div style="font-weight: bold;">{{ $ketuaOrmawa['jabatan'] ?? 'Ketua Ormawa' }}</div>
                     @if(!empty($ormawaUser?->periode_kepengurusan))
                         <div style="font-size: 8.5pt; color: #444; font-weight: normal; margin-bottom: 2px;">Periode {{ $ormawaUser->periode_kepengurusan }}</div>
@@ -260,7 +429,7 @@
                     <div style="font-size: 9pt;">{{ $sigOrmawa?->identitas_label ?? 'NIM' }}. {{ $sigOrmawa?->nidn_penandatangan ?? $ketuaOrmawa['nim'] ?? '........................' }}</div>
                 </td>
                 <td style="width: 50%; border: none; vertical-align: top; padding: 0 10px;">
-                    <div style="font-weight: bold;">{{ $ketuaPelaksana['jabatan'] ?? 'Ketua Pelaksana' }}</div>
+                    <div style="font-weight: bold;">{{ $ketuaPelaksana['jabatan'] ?? $defaultJabatanPelaksana }}</div>
                     @if(!empty($ormawaUser?->periode_kepengurusan))
                         <div style="font-size: 8.5pt; color: #444; font-weight: normal; margin-bottom: 2px;">Periode {{ $ormawaUser->periode_kepengurusan }}</div>
                     @endif
@@ -309,7 +478,8 @@
         </table>
     </div>
 
-    <!-- ================= HALAMAN 2: LAMPIRAN DAFTAR HADIR ================= -->
+    @if($jenisLpj === 'kegiatan')
+    <!-- ================= HALAMAN 2: LAMPIRAN DAFTAR HADIR (HANYA UNTUK KEGIATAN) ================= -->
     <div class="page-break"></div>
 
     <div style="text-align: center; font-weight: bold; font-size: 12pt; margin-bottom: 15px;">
@@ -371,8 +541,9 @@
         <div style="font-weight: bold; text-decoration: underline;">{{ $ketuaPelaksana['nama'] }}</div>
         <div style="font-size: 9pt;">NIM. {{ $ketuaPelaksana['nim'] ?? '........................' }}</div>
     </div>
+    @endif
 
-    <!-- ================= HALAMAN DOKUMENTASI KEGIATAN (BEBAS / UNLIMITED) ================= -->
+    <!-- ================= HALAMAN FOTO DOKUMENTASI (BEBAS / UNLIMITED) ================= -->
     @php
         $fotoPages = !empty($fotoDokumentasi) ? array_chunk($fotoDokumentasi, 6) : [[]];
     @endphp
@@ -381,7 +552,7 @@
         <div class="page-break"></div>
 
         <div style="text-align: center; font-weight: bold; font-size: 13pt; margin-bottom: 20px;">
-            Dokumentasi Kegiatan {{ $pageIndex > 0 ? '(Lanjutan ' . ($pageIndex + 1) . ')' : '' }}
+            Dokumentasi {{ $jenisLpj === 'pengadaan_barang' ? 'Fisik Barang & Inventaris' : ($jenisLpj === 'pendanaan_lomba' ? 'Perlombaan & Trophy/Piala' : 'Kegiatan') }} {{ $pageIndex > 0 ? '(Lanjutan ' . ($pageIndex + 1) . ')' : '' }}
         </div>
 
         @if(!empty($pagePhotos))
@@ -399,7 +570,7 @@
                             @endphp
                             <td class="photo-box">
                                 @if($fFullPath)
-                                    <img src="{{ $fFullPath }}" alt="Foto Kegiatan">
+                                    <img src="{{ $fFullPath }}" alt="Foto Dokumentasi">
                                 @else
                                     <span style="color: #999; font-size: 9pt;">[ Foto Dokumentasi ]</span>
                                 @endif
@@ -412,7 +583,6 @@
                 @endforeach
             </table>
         @else
-            {{-- Default placeholder jika belum ada foto diunggah --}}
             <table class="photo-grid">
                 <tr>
                     <td class="photo-box"><span style="color: #999; font-size: 9pt;">[ Foto Dokumentasi 1 ]</span></td>
@@ -430,7 +600,7 @@
         @endif
     @endforeach
 
-    <!-- ================= HALAMAN 4: LAPORAN KEUANGAN & STRUK ================= -->
+    <!-- ================= HALAMAN LAPORAN KEUANGAN & STRUK ================= -->
     <div class="page-break"></div>
 
     <div style="text-align: center; font-weight: bold; font-size: 13pt; margin-bottom: 15px;">
@@ -470,7 +640,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td>14 Mei 2025</td>
+                    <td>14 Mei 2026</td>
                     <td>Anggaran Kemahasiswaan ITG</td>
                     <td style="text-align: right;">1.000.000</td>
                     <td style="text-align: right;">0</td>
@@ -478,18 +648,18 @@
                     <td>Kuitansi Terlampir</td>
                 </tr>
                 <tr>
-                    <td>18 Mei 2025</td>
-                    <td>Cetak Banner &amp; Konsumsi</td>
+                    <td>18 Mei 2026</td>
+                    <td>Realisasi Pembelian / Belanja</td>
                     <td style="text-align: right;">0</td>
-                    <td style="text-align: right;">150.000</td>
                     <td style="text-align: right;">850.000</td>
+                    <td style="text-align: right;">150.000</td>
                     <td>Struk Terlampir</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 
-    <!-- Grid Bukti Struk / Kuitansi (Bebas / Unlimited) -->
+    <!-- Grid Bukti Struk / Kuitansi / Faktur (Bebas / Unlimited) -->
     @php
         $strukPairs = !empty($buktiStruk) ? array_chunk($buktiStruk, 2) : [];
     @endphp
@@ -498,27 +668,25 @@
         <table class="photo-grid" style="margin-top: 15px;">
             @foreach($strukPairs as $pair)
                 <tr>
-                    @foreach($pair as $sFile)
+                    @foreach($pair as $sIdx => $sPath)
                         @php
                             $sFullPath = null;
-                            if (file_exists(public_path('storage/' . $sFile))) {
-                                $sFullPath = public_path('storage/' . $sFile);
-                            } elseif (file_exists(storage_path('app/public/' . $sFile))) {
-                                $sFullPath = storage_path('app/public/' . $sFile);
+                            if (file_exists(public_path('storage/' . $sPath))) {
+                                $sFullPath = public_path('storage/' . $sPath);
+                            } elseif (file_exists(storage_path('app/public/' . $sPath))) {
+                                $sFullPath = storage_path('app/public/' . $sPath);
                             }
                         @endphp
-                        <td class="photo-box" style="height: 160px;">
-                            @if($sFullPath && !str_ends_with(strtolower($sFile), '.pdf'))
-                                <img src="{{ $sFullPath }}" alt="Struk Pembayaran">
-                            @elseif($sFullPath && str_ends_with(strtolower($sFile), '.pdf'))
-                                <span style="font-size: 8.5pt; color: #444;">[ Dokumen Berkas PDF Terlampir ]</span>
+                        <td class="photo-box">
+                            @if($sFullPath)
+                                <img src="{{ $sFullPath }}" alt="Bukti Struk / Kuitansi">
                             @else
-                                <span style="font-size: 8.5pt; color: #888;">&lt;&lt; BUKTI STRUK / KUITANSI &gt;&gt;</span>
+                                <span style="color: #999; font-size: 9pt;">[ Bukti Struk / Nota Toko ]</span>
                             @endif
                         </td>
                     @endforeach
                     @if(count($pair) === 1)
-                        <td class="photo-box" style="height: 160px; border: none;"></td>
+                        <td class="photo-box" style="border: none;"></td>
                     @endif
                 </tr>
             @endforeach
@@ -526,40 +694,15 @@
     @else
         <table class="photo-grid" style="margin-top: 15px;">
             <tr>
-                <td class="photo-box" style="height: 160px;">
-                    <span style="font-size: 8.5pt; color: #888;">&lt;&lt; FOTO STRUK / KUITANSI / NOTA 1 &gt;&gt;</span>
-                </td>
-                <td class="photo-box" style="height: 160px;">
-                    <span style="font-size: 8.5pt; color: #888;">&lt;&lt; FOTO STRUK / KUITANSI / NOTA 2 &gt;&gt;</span>
-                </td>
+                <td class="photo-box"><span style="color: #999; font-size: 9pt;">[ Bukti Nota / Kuitansi 1 ]</span></td>
+                <td class="photo-box"><span style="color: #999; font-size: 9pt;">[ Bukti Nota / Kuitansi 2 ]</span></td>
             </tr>
             <tr>
-                <td class="photo-box" style="height: 160px;">
-                    <span style="font-size: 8.5pt; color: #888;">&lt;&lt; FOTO STRUK / KUITANSI / NOTA 3 &gt;&gt;</span>
-                </td>
-                <td class="photo-box" style="height: 160px;">
-                    <span style="font-size: 8.5pt; color: #888;">&lt;&lt; FOTO STRUK / KUITANSI / NOTA 4 &gt;&gt;</span>
-                </td>
+                <td class="photo-box"><span style="color: #999; font-size: 9pt;">[ Bukti Nota / Kuitansi 3 ]</span></td>
+                <td class="photo-box"><span style="color: #999; font-size: 9pt;">[ Bukti Nota / Kuitansi 4 ]</span></td>
             </tr>
         </table>
     @endif
-
-    <div class="avoid-break" style="margin-top: 20px; text-align: right; width: 300px; margin-left: auto;">
-        <div>Garut, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</div>
-        <div style="margin-top: 4px; font-weight: bold;">Ketua Pelaksana</div>
-        <div style="height: 60px;"></div>
-        <div style="font-weight: bold; text-decoration: underline;">{{ $ketuaPelaksana['nama'] }}</div>
-        <div style="font-size: 9pt;">NIM. {{ $ketuaPelaksana['nim'] ?? '........................' }}</div>
-    </div>
-
-    <!-- Catatan Resmi Template ITG -->
-    <div class="avoid-break" style="margin-top: 20px; font-size: 8.5pt; line-height: 1.4; border-top: 1px solid #000; padding-top: 6px;">
-        <strong>CATATAN:</strong><br>
-        &bull; File surat/ proposal serta Laporan Kegiatan yang diupload sudah ditandatangan oleh ketua pelaksana, ketua ormawa, atau BEM/BPM dan cap basah.<br>
-        &bull; Nama file surat/proposal pengajuan: <em>pengajuan_nama kegiatan</em>.<br>
-        &bull; Nama file Laporan Kegiatan: <em>Laporan_nama kegiatan</em>.<br>
-        &bull; Tanda tangan Kepala BKKH dan Wakil Rektor akan dilakukan oleh biro kemahasiswaan.
-    </div>
 
 </body>
 </html>

@@ -34,20 +34,20 @@ class PengajuanSubmitRoutingTest extends TestCase
         ]);
     }
 
-    /** Transisi dari draft untuk pengaju HIMA, BEM & BPM tersedia di seeder. */
-    public function test_draft_transitions_for_hima_bem_and_bpm_exist(): void
+    /** Transisi dari draft untuk pengaju Ormawa (HIMA/UKM), BEM & BPM tersedia di seeder. */
+    public function test_draft_transitions_for_ormawa_bem_and_bpm_exist(): void
     {
         $draft = WorkflowState::where('name', WorkflowState::DRAFT)->firstOrFail();
-        $prodiReview = WorkflowState::where('name', WorkflowState::PRODI_REVIEW)->firstOrFail();
+        $submitted = WorkflowState::where('name', WorkflowState::SUBMITTED)->firstOrFail();
         $bemApproved = WorkflowState::where('name', WorkflowState::BEM_APPROVED)->firstOrFail();
         $ppksReview = WorkflowState::where('name', WorkflowState::PPKS_REVIEW)->firstOrFail();
 
         $this->assertTrue(
             WorkflowTransition::where('from_state_id', $draft->id)
-                ->where('to_state_id', $prodiReview->id)
+                ->where('to_state_id', $submitted->id)
                 ->where('required_role', 'ormawa')
                 ->exists(),
-            'Transisi draft -> prodi_review (role ormawa) tidak ditemukan'
+            'Transisi draft -> submitted (role ormawa) tidak ditemukan'
         );
 
         $this->assertTrue(
@@ -83,7 +83,7 @@ class PengajuanSubmitRoutingTest extends TestCase
         $this->assertEquals(WorkflowState::SUBMITTED, $pengajuan->fresh()->state->name);
     }
 
-    public function test_hima_submit_goes_to_prodi(): void
+    public function test_hima_submit_goes_directly_to_bem_without_prodi(): void
     {
         $hima = User::factory()->create([
             'name' => 'HIMA Informatika ITG',
@@ -96,43 +96,8 @@ class PengajuanSubmitRoutingTest extends TestCase
         $response = $this->actingAs($hima)->post(route('pengajuan.ajukan', $pengajuan));
 
         $response->assertRedirect(route('pengajuan.index'));
-        $response->assertSessionHas('success', 'Pengajuan berhasil dikirim ke Pembina Prodi.');
-        $this->assertEquals(WorkflowState::PRODI_REVIEW, $pengajuan->fresh()->state->name);
-    }
-
-    public function test_prodi_can_verify_and_forward_to_bem(): void
-    {
-        $hima = User::factory()->create([
-            'name' => 'HIMA Informatika ITG',
-            'prodi' => 'Teknik Informatika',
-            'jenis_ormawa' => 'hima',
-        ]);
-        $hima->assignRole('ormawa');
-        $pengajuan = $this->makeDraftPengajuan($hima);
-        $this->actingAs($hima)->post(route('pengajuan.ajukan', $pengajuan));
-
-        $prodi = User::factory()->create([
-            'name' => 'Ketua Prodi IF',
-            'prodi' => 'Teknik Informatika',
-        ]);
-        $prodi->assignRole('prodi');
-
-        $prodiReviewState = WorkflowState::where('name', WorkflowState::PRODI_REVIEW)->firstOrFail();
-        $submittedState = WorkflowState::where('name', WorkflowState::SUBMITTED)->firstOrFail();
-        $transition = WorkflowTransition::where('from_state_id', $prodiReviewState->id)
-            ->where('to_state_id', $submittedState->id)
-            ->where('required_role', 'prodi')
-            ->firstOrFail();
-
-        $response = $this->actingAs($prodi)->post(route('verifikasi.process', $pengajuan), [
-            'transition_id' => $transition->id,
-            'catatan' => 'Disetujui Pembina Prodi IF.',
-        ]);
-
-        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Pengajuan berhasil dikirim ke BEM.');
         $this->assertEquals(WorkflowState::SUBMITTED, $pengajuan->fresh()->state->name);
-        $this->assertNotNull($pengajuan->fresh()->verified_prodi_at);
-        $this->assertEquals('Disetujui Pembina Prodi IF.', $pengajuan->fresh()->catatan_prodi);
     }
 
     public function test_bem_submit_goes_to_bpm(): void
@@ -153,6 +118,7 @@ class PengajuanSubmitRoutingTest extends TestCase
         $bpm = User::factory()->create();
         $bpm->assignRole('bpm');
         $pengajuan = $this->makeDraftPengajuan($bpm);
+        $pengajuan->update(['perlu_satgas_ppks' => true]);
 
         $response = $this->actingAs($bpm)->post(route('pengajuan.ajukan', $pengajuan));
 
@@ -168,7 +134,10 @@ class PengajuanSubmitRoutingTest extends TestCase
         $pengajuan = $this->makeDraftPengajuan($ormawa);
 
         $ppksState = WorkflowState::where('name', WorkflowState::PPKS_REVIEW)->firstOrFail();
-        $pengajuan->update(['workflow_state_id' => $ppksState->id]);
+        $pengajuan->update([
+            'workflow_state_id' => $ppksState->id,
+            'perlu_satgas_ppks' => true,
+        ]);
 
         $satgas = User::factory()->create(['name' => 'Ketua Satgas PPKS ITG']);
         $satgas->assignRole('satgas_ppks');

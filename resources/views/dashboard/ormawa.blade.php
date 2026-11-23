@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Dashboard Ormawa') }}
+            {{ Auth::user()->isHima() ? __('Dashboard Himpunan (HIMA) — Pengajuan Dana Non-Akademik & LPJ') : __('Dashboard Ormawa') }}
         </h2>
     </x-slot>
 
@@ -91,14 +91,14 @@
                             <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </div>
                         <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold text-[10px]">
-                            Kas Ormawa
+                            {{ Auth::user()->isHima() ? 'Dana Non-Akademik' : 'Kas Ormawa' }}
                         </span>
                     </div>
                     <div class="my-auto py-1">
                         <div class="text-2xl font-extrabold font-mono text-emerald-600 tracking-tight leading-none">
                             Rp {{ number_format($stats['saldo'], 0, ',', '.') }}
                         </div>
-                        <div class="text-xs font-bold text-slate-900 mt-1 line-clamp-1">Sisa Saldo Tersedia</div>
+                        <div class="text-xs font-bold text-slate-900 mt-1 line-clamp-1">{{ Auth::user()->isHima() ? 'Sisa Saldo Tersedia' : 'Sisa Saldo Tersedia' }}</div>
                     </div>
                     <a href="{{ route('pengajuan.index') }}" class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-blue-600 group-hover:text-blue-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded">
                         <span>Cek Mutasi</span>
@@ -113,14 +113,14 @@
                             <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                         </div>
                         <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold text-[10px]">
-                            Pagu Anggaran
+                            {{ Auth::user()->isHima() ? 'Pagu Non-Akademik' : 'Pagu Anggaran' }}
                         </span>
                     </div>
                     <div class="my-auto py-1">
                         <div class="text-2xl font-extrabold font-mono text-[#1E40AF] tracking-tight leading-none">
                             Rp {{ number_format($stats['total_dana'], 0, ',', '.') }}
                         </div>
-                        <div class="text-xs font-bold text-slate-900 mt-1 line-clamp-1">Total Dana Diberikan</div>
+                        <div class="text-xs font-bold text-slate-900 mt-1 line-clamp-1">{{ Auth::user()->isHima() ? 'Total Dana Dicairkan' : 'Total Dana Diberikan' }}</div>
                     </div>
                     <a href="{{ route('pengajuan.index') }}" class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-blue-600 group-hover:text-blue-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded">
                         <span>Rincian Pagu</span>
@@ -164,7 +164,7 @@
                         <div class="text-2xl font-extrabold font-mono text-indigo-600 tracking-tight leading-none">
                             {{ $stats['total_pengajuan'] }}
                         </div>
-                        <div class="text-xs font-bold text-slate-900 mt-1 line-clamp-1">Total Proposal Diajukan</div>
+                        <div class="text-xs font-bold text-slate-900 mt-1 line-clamp-1">{{ Auth::user()->isHima() ? 'Total Pengajuan Dana' : 'Total Proposal Diajukan' }}</div>
                     </div>
                     <a href="{{ route('pengajuan.index') }}" class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-blue-600 group-hover:text-blue-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded">
                         <span>Lihat Semua</span>
@@ -186,7 +186,7 @@
                         <div class="text-2xl font-extrabold font-mono text-purple-600 tracking-tight leading-none">
                             {{ $stats['sedang_proses'] }}
                         </div>
-                        <div class="text-xs font-bold text-slate-900 mt-1 line-clamp-1">Proposal Dalam Proses</div>
+                        <div class="text-xs font-bold text-slate-900 mt-1 line-clamp-1">{{ Auth::user()->isHima() ? 'Pengajuan Sedang Diproses' : 'Proposal Dalam Proses' }}</div>
                     </div>
                     <a href="{{ route('pengajuan.index') }}" class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-blue-600 group-hover:text-blue-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded">
                         <span>Pantau Progres</span>
@@ -209,8 +209,8 @@
                         <!-- Header -->
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
                             <div>
-                                <h3 class="text-base font-bold text-slate-900">Visualisasi Alokasi & Realisasi Anggaran</h3>
-                                <p class="text-xs text-slate-500 mt-0.5">Monitoring serapan pagu kas ormawa aktif Tahun Akademik 2026/2027</p>
+                                <h3 class="text-base font-bold text-slate-900">{{ Auth::user()->isHima() ? 'Visualisasi Alokasi Dana Non-Akademik' : 'Visualisasi Alokasi & Realisasi Anggaran' }}</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">{{ Auth::user()->isHima() ? 'Monitoring realisasi dana kegiatan non-akademik Himpunan Mahasiswa (HIMA) T.A. 2026/2027' : 'Monitoring serapan pagu kas ormawa aktif Tahun Akademik 2026/2027' }}</p>
                             </div>
                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
                                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -294,10 +294,10 @@
                     <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                         <div class="flex items-center gap-2 text-slate-600 min-w-0">
                             <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-                            <span class="leading-normal">Ajukan proposal minimal H-14 kegiatan agar verifikasi tepat waktu.</span>
+                            <span class="leading-normal">{{ Auth::user()->isHima() ? 'Ajukan proposal dana non-akademik minimal H-14 kegiatan agar verifikasi tepat waktu.' : 'Ajukan proposal minimal H-14 kegiatan agar verifikasi tepat waktu.' }}</span>
                         </div>
                         <a href="{{ route('pengajuan.create') }}" class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[44px] bg-[#0B1528] hover:bg-[#1E3A8A] text-white rounded-xl font-bold shadow-xs hover:shadow transition-all shrink-0 whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2">
-                            <span>+ Buat Pengajuan Baru</span>
+                            <span>{{ Auth::user()->isHima() ? '+ Ajukan Dana Non-Akademik' : '+ Buat Pengajuan Baru' }}</span>
                         </a>
                     </div>
                 </div>
@@ -307,7 +307,7 @@
                     <div>
                         <!-- Header Banner -->
                         <div class="bg-[#0B1528] text-white px-5 py-3.5 flex items-center justify-between">
-                            <span class="text-[11px] font-bold text-blue-300 uppercase tracking-wider">Portal Resmi Ormawa</span>
+                            <span class="text-[11px] font-bold text-blue-300 uppercase tracking-wider">{{ Auth::user()->isHima() ? 'Portal Himpunan Mahasiswa' : 'Portal Resmi Ormawa' }}</span>
                             <span class="text-[11px] font-medium text-slate-300">T.A. 2026/2027</span>
                         </div>
 
@@ -334,7 +334,7 @@
                                 </span>
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
                                     <svg class="w-3 h-3 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                    <span>Ormawa Kampus</span>
+                                    <span>{{ Auth::user()->isHima() ? 'Himpunan Mahasiswa (HIMA)' : 'Ormawa Kampus' }}</span>
                                 </span>
                             </div>
 
@@ -366,8 +366,60 @@
                 </div>
             </div>
 
-                <!-- Calendar / Facility Usage -->
-                <div class="lg:col-span-3 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+            @if(Auth::user()->isHima())
+                <!-- Khusus HIMA: Informasi Alur Dana Non-Akademik & LPJ + Pengumuman -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white overflow-hidden shadow-sm rounded-2xl border border-slate-200/80 p-6">
+                        <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">Panduan Fitur Himpunan Mahasiswa (HIMA)</h3>
+                                <p class="text-xs text-slate-500">Sistem ini memfasilitasi pengajuan dana non-akademik dan pertanggungjawaban kegiatan (LPJ).</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/70">
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center">1</span>
+                                    <h4 class="text-xs font-bold text-slate-800">Pengajuan Dana Non-Akademik</h4>
+                                </div>
+                                <p class="text-[11px] text-slate-600 mb-3">Ajukan anggaran kegiatan non-akademik langsung ke BEM & kemahasiswaan kampus ITG tanpa alur persetujuan prodi.</p>
+                                <a href="{{ route('pengajuan.create') }}" class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 underline">
+                                    <span>Buat Pengajuan</span> &rarr;
+                                </a>
+                            </div>
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/70">
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <span class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-800 text-xs font-bold flex items-center justify-center">2</span>
+                                    <h4 class="text-xs font-bold text-slate-800">Laporan Pertanggungjawaban (LPJ)</h4>
+                                </div>
+                                <p class="text-[11px] text-slate-600 mb-3">Setelah dana kegiatan dicairkan dan kegiatan selesai, unggah LPJ resmi untuk diverifikasi oleh BEM, BKHM, dan WR3.</p>
+                                <a href="{{ route('generator.lpj.create') }}" class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 underline">
+                                    <span>Buat / Unggah LPJ</span> &rarr;
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white overflow-hidden shadow-sm rounded-2xl border border-slate-200/80 p-6">
+                        <h3 class="text-base font-bold text-slate-900 mb-4 pb-3 border-b border-slate-100">Pengumuman Terbaru</h3>
+                        <div class="space-y-4">
+                            @forelse($announcements ?? [] as $ann)
+                                <div class="p-3 bg-indigo-50/60 rounded-xl border-l-4 border-indigo-500">
+                                    <p class="text-sm font-bold text-slate-900">{{ $ann->judul }}</p>
+                                    <p class="text-xs text-gray-600 line-clamp-2 mt-1">{{ $ann->isi }}</p>
+                                </div>
+                            @empty
+                                <p class="text-gray-500 italic text-xs">Belum ada pengumuman.</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            @else
+                <!-- Calendar / Facility Usage (Non-HIMA / UKM) -->
+                <div class="lg:col-span-3 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b pb-3">
                         <div>
                             <h3 class="text-lg font-bold text-slate-900">Kalender Pemakaian Fasilitas</h3>
@@ -390,56 +442,59 @@
                 </div>
 
                 <!-- Agenda & Facilities List (Simplified) -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-bold mb-4">Agenda Rapat Mendatang</h3>
-                    <div class="space-y-4">
-                        @forelse($meetings ?? [] as $meeting)
-                            <div class="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded transition">
-                                <div class="bg-indigo-100 text-indigo-600 p-2 rounded text-center min-w-[50px]">
-                                    <div class="text-xs font-bold uppercase">{{ \Carbon\Carbon::parse($meeting->tanggal_rapat)->format('M') }}</div>
-                                    <div class="text-lg font-bold">{{ \Carbon\Carbon::parse($meeting->tanggal_rapat)->format('d') }}</div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                        <h3 class="text-lg font-bold mb-4">Agenda Rapat Mendatang</h3>
+                        <div class="space-y-4">
+                            @forelse($meetings ?? [] as $meeting)
+                                <div class="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded transition">
+                                    <div class="bg-indigo-100 text-indigo-600 p-2 rounded text-center min-w-[50px]">
+                                        <div class="text-xs font-bold uppercase">{{ \Carbon\Carbon::parse($meeting->tanggal_rapat)->format('M') }}</div>
+                                        <div class="text-lg font-bold">{{ \Carbon\Carbon::parse($meeting->tanggal_rapat)->format('d') }}</div>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold">{{ $meeting->judul_rapat }}</p>
+                                        <p class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($meeting->tanggal_rapat)->format('d M Y') }} {{ $meeting->jam_rapat ?? '' }} WIB</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p class="text-sm font-bold">{{ $meeting->judul_rapat }}</p>
-                                    <p class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($meeting->tanggal_rapat)->format('d M Y') }} {{ $meeting->jam_rapat ?? '' }} WIB</p>
-                                </div>
-                            </div>
-                        @empty
-                            <p class="text-gray-500 italic text-sm">Tidak ada jadwal rapat.</p>
-                        @endforelse
+                            @empty
+                                <p class="text-gray-500 italic text-sm">Tidak ada jadwal rapat.</p>
+                            @endforelse
+                        </div>
                     </div>
-                </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-bold mb-4">Pemakaian Fasilitas Terdekat</h3>
-                    <div class="space-y-4">
-                        @forelse($facilities ?? [] as $fac)
-                            <div class="flex items-center justify-between p-2 border-b last:border-0">
-                                <div>
-                                    <p class="text-sm font-bold">{{ $fac->ruangan->nama_ruangan ?? $fac->nama_kegiatan }}</p>
-                                    <p class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($fac->tgl_mulai)->format('d M Y') }} - {{ \Carbon\Carbon::parse($fac->tgl_selesai)->format('d M Y') }}</p>
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                        <h3 class="text-lg font-bold mb-4">Pemakaian Fasilitas Terdekat</h3>
+                        <div class="space-y-4">
+                            @forelse($facilities ?? [] as $fac)
+                                <div class="flex items-center justify-between p-2 border-b last:border-0">
+                                    <div>
+                                        <p class="text-sm font-bold">{{ $fac->ruangan->nama_ruangan ?? $fac->nama_kegiatan }}</p>
+                                        <p class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($fac->tgl_mulai)->format('d M Y') }} - {{ \Carbon\Carbon::parse($fac->tgl_selesai)->format('d M Y') }}</p>
+                                    </div>
+                                    <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">{{ $fac->status_akhir ?? 'Aktif' }}</span>
                                 </div>
-                                <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">{{ $fac->status_akhir ?? 'Aktif' }}</span>
-                            </div>
-                        @empty
-                            <p class="text-gray-500 italic text-sm">Tidak ada jadwal pemakaian.</p>
-                        @endforelse
+                            @empty
+                                <p class="text-gray-500 italic text-sm">Tidak ada jadwal pemakaian.</p>
+                            @endforelse
+                        </div>
                     </div>
-                </div>
 
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-bold mb-4">Pengumuman Terbaru</h3>
-                    <div class="space-y-4">
-                        @forelse($announcements ?? [] as $ann)
-                            <div class="p-3 bg-indigo-50 rounded-lg border-l-4 border-indigo-500">
-                                <p class="text-sm font-bold">{{ $ann->judul }}</p>
-                                <p class="text-xs text-gray-600 line-clamp-2">{{ $ann->isi }}</p>
-                            </div>
-                        @empty
-                            <p class="text-gray-500 italic text-sm">Belum ada pengumuman.</p>
-                        @endforelse
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                        <h3 class="text-lg font-bold mb-4">Pengumuman Terbaru</h3>
+                        <div class="space-y-4">
+                            @forelse($announcements ?? [] as $ann)
+                                <div class="p-3 bg-indigo-50 rounded-lg border-l-4 border-indigo-500">
+                                    <p class="text-sm font-bold">{{ $ann->judul }}</p>
+                                    <p class="text-xs text-gray-600 line-clamp-2">{{ $ann->isi }}</p>
+                                </div>
+                            @empty
+                                <p class="text-gray-500 italic text-sm">Belum ada pengumuman.</p>
+                            @endforelse
+                        </div>
                     </div>
                 </div>
+            @endif
             </div>
         </div>
     </div>
@@ -487,36 +542,38 @@
 
             // FullCalendar Integration
             const calendarEl = document.getElementById('calendar');
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                locale: 'id',
-                initialView: 'dayGridMonth',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                },
-                events: [
-                    @foreach($facilities as $fac)
-                        {
-                            title: '{{ $fac->ruangan->nama_ruangan ?? $fac->nama_kegiatan }}',
-                            start: '{{ $fac->tgl_mulai }}',
-                            end: '{{ \Carbon\Carbon::parse($fac->tgl_selesai)->addDay()->format('Y-m-d') }}',
-                            color: '#4f46e5'
-                        },
-                    @endforeach
-                    @foreach($meetings as $m)
-                        {
-                            title: 'Rapat: {{ $m->judul_rapat }}',
-                            start: '{{ $m->tanggal_rapat }}',
-                            color: '#f59e0b'
-                        },
-                    @endforeach
-                ],
-                eventClick: function(info) {
-                    alert('Peminjaman: ' + info.event.title);
-                }
-            });
-            calendar.render();
+            if (calendarEl) {
+                const calendar = new FullCalendar.Calendar(calendarEl, {
+                    locale: 'id',
+                    initialView: 'dayGridMonth',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    },
+                    events: [
+                        @foreach($facilities as $fac)
+                            {
+                                title: '{{ $fac->ruangan->nama_ruangan ?? $fac->nama_kegiatan }}',
+                                start: '{{ $fac->tgl_mulai }}',
+                                end: '{{ \Carbon\Carbon::parse($fac->tgl_selesai)->addDay()->format('Y-m-d') }}',
+                                color: '#4f46e5'
+                            },
+                        @endforeach
+                        @foreach($meetings as $m)
+                            {
+                                title: 'Rapat: {{ $m->judul_rapat }}',
+                                start: '{{ $m->tanggal_rapat }}',
+                                color: '#f59e0b'
+                            },
+                        @endforeach
+                    ],
+                    eventClick: function(info) {
+                        alert('Peminjaman: ' + info.event.title);
+                    }
+                });
+                calendar.render();
+            }
         });
     </script>
 </x-app-layout>

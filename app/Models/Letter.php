@@ -94,6 +94,9 @@ class Letter extends Model
                 'nama' => $p['nama'] ?? '-',
                 'jabatan' => $p['jabatan'] ?? ($role ? ucfirst($role) : 'Penandatangan'),
                 'nim' => $nim,
+                'nidn' => $p['nidn'] ?? null,
+                'identitas_label' => $p['identitas_label'] ?? null,
+                'identitas_nomor' => $p['identitas_nomor'] ?? ($p['nidn'] ?? $nim),
             ];
         }, $list);
     }

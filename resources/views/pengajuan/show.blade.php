@@ -106,47 +106,59 @@
                         @endif
 
                         @if($pengajuan->isKegiatan())
-                        <div class="sm:col-span-2 p-3.5 rounded-xl border border-rose-200 bg-rose-50/40 space-y-2">
-                            <div class="flex items-center justify-between flex-wrap gap-2">
-                                <span class="text-xs font-bold text-rose-900 uppercase tracking-wider flex items-center gap-1.5">
-                                    🛡️ Instrumen Pengawasan Satgas PPKS &amp; Pembina Prodi
-                                </span>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold {{ $pengajuan->kategori_kegiatan === 'menginap' ? 'bg-rose-100 text-rose-800' : ($pengajuan->kategori_kegiatan === 'luar_kampus' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800') }}">
-                                    Lingkup: {{ ucwords(str_replace('_', ' ', $pengajuan->kategori_kegiatan ?? 'dalam_kampus')) }}
-                                </span>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                                <div>
-                                    <span class="text-slate-500">Narahubung PIC Panitia:</span>
-                                    <p class="font-semibold text-slate-800">{{ $pengajuan->kontak_pic_ppks ?: '- Belum Ditentukan -' }}</p>
+                            @if($pengajuan->perlu_satgas_ppks)
+                            <div class="sm:col-span-2 p-3.5 rounded-xl border border-rose-200 bg-rose-50/40 space-y-2">
+                                <div class="flex items-center justify-between flex-wrap gap-2">
+                                    <span class="text-xs font-bold text-rose-900 uppercase tracking-wider flex items-center gap-1.5">
+                                        🛡️ Instrumen Pengawasan Satgas PPKS (Wajib Izin Satgas)
+                                    </span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold {{ $pengajuan->kategori_kegiatan === 'menginap' ? 'bg-rose-100 text-rose-800' : ($pengajuan->kategori_kegiatan === 'luar_kampus' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800') }}">
+                                        Lingkup: {{ ucwords(str_replace('_', ' ', $pengajuan->kategori_kegiatan ?? 'dalam_kampus')) }}
+                                    </span>
                                 </div>
-                                <div>
-                                    <span class="text-slate-500">Pakta Integritas Bebas Kekerasan Seksual:</span>
-                                    @if($pengajuan->file_pakta_ppks)
-                                        <p class="mt-0.5">
-                                            <a href="{{ route('dokumen.pakta-ppks', $pengajuan) }}" target="_blank" class="inline-flex items-center gap-1 font-bold text-rose-700 hover:text-rose-900 underline">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                                Unduh / Lihat Pakta PPKS
-                                            </a>
-                                        </p>
-                                    @else
-                                        <p class="text-slate-400 italic">Tidak ada lampiran berkas khusus</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                    <div>
+                                        <span class="text-slate-500">Narahubung PIC Panitia:</span>
+                                        <p class="font-semibold text-slate-800">{{ $pengajuan->kontak_pic_ppks ?: '- Belum Ditentukan -' }}</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-slate-500">Pakta Integritas Bebas Kekerasan Seksual:</span>
+                                        @if($pengajuan->file_pakta_ppks)
+                                            <p class="mt-0.5">
+                                                <a href="{{ route('dokumen.pakta-ppks', $pengajuan) }}" target="_blank" class="inline-flex items-center gap-1 font-bold text-rose-700 hover:text-rose-900 underline">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                    Unduh / Lihat Pakta PPKS
+                                                </a>
+                                            </p>
+                                        @else
+                                            <p class="text-slate-400 italic">Tidak ada lampiran berkas khusus</p>
+                                        @endif
+                                    </div>
+                                    @if($pengajuan->catatan_prodi)
+                                    <div class="sm:col-span-2 bg-white/70 p-2 rounded border border-indigo-100">
+                                        <span class="font-bold text-indigo-900">Catatan Pembina Prodi:</span>
+                                        <p class="text-slate-700 mt-0.5">{{ $pengajuan->catatan_prodi }}</p>
+                                    </div>
+                                    @endif
+                                    @if($pengajuan->catatan_ppks)
+                                    <div class="sm:col-span-2 bg-white/70 p-2 rounded border border-rose-100">
+                                        <span class="font-bold text-rose-900">Catatan Satgas PPKS:</span>
+                                        <p class="text-slate-700 mt-0.5">{{ $pengajuan->catatan_ppks }}</p>
+                                    </div>
                                     @endif
                                 </div>
-                                @if($pengajuan->catatan_prodi)
-                                <div class="sm:col-span-2 bg-white/70 p-2 rounded border border-indigo-100">
-                                    <span class="font-bold text-indigo-900">Catatan Pembina Prodi:</span>
-                                    <p class="text-slate-700 mt-0.5">{{ $pengajuan->catatan_prodi }}</p>
-                                </div>
-                                @endif
-                                @if($pengajuan->catatan_ppks)
-                                <div class="sm:col-span-2 bg-white/70 p-2 rounded border border-rose-100">
-                                    <span class="font-bold text-rose-900">Catatan Satgas PPKS:</span>
-                                    <p class="text-slate-700 mt-0.5">{{ $pengajuan->catatan_ppks }}</p>
-                                </div>
-                                @endif
                             </div>
-                        </div>
+                            @else
+                            <div class="sm:col-span-2 p-3.5 rounded-xl border border-blue-200 bg-blue-50/60 flex items-start gap-3">
+                                <span class="text-2xl shrink-0 mt-0.5">🎪</span>
+                                <div class="text-xs text-blue-950 space-y-0.5">
+                                    <div class="font-bold text-blue-900">Kegiatan Internal / Rutin (Bypass Satgas PPKS)</div>
+                                    <p class="text-blue-800">
+                                        Pengusul menandai kegiatan ini tidak memerlukan rekomendasi/izin khusus Satgas PPKS ITG. Setelah disetujui BPM, berkas langsung diteruskan ke BKHM.
+                                    </p>
+                                </div>
+                            </div>
+                            @endif
                         @else
                         <div class="sm:col-span-2 p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/60 flex items-start gap-3">
                             <span class="text-2xl shrink-0 mt-0.5">🚀</span>
@@ -283,7 +295,7 @@
                     @endif
 
                     @php
-                        $canCancelInVerification = in_array($pengajuan->state->name, ['prodi_review', 'submitted', 'bem_approved', 'ppks_review', 'bpm_approved', 'bkhm_approved', 'wr3_approved', 'to_treasurer']) && $pengajuan->user_id === Auth::id();
+                        $canCancelInVerification = in_array($pengajuan->state->name, ['submitted', 'bem_approved', 'ppks_review', 'bpm_approved', 'bkhm_approved', 'wr3_approved', 'to_treasurer']) && $pengajuan->user_id === Auth::id();
                     @endphp
                     @if($canCancelInVerification)
                     <div class="mt-8 pt-4 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200" x-data="{ showCancelModal: false }">

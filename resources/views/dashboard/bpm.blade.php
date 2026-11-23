@@ -78,10 +78,13 @@
 
             <!-- Widget Status Dana BPM (3 Cards) -->
             <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                <h3 class="font-bold text-slate-900 text-sm sm:text-base mb-3">Status Dana Anda</h3>
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-slate-900 text-sm sm:text-base">Status Pagu Anggaran BPM</h3>
+                    <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">Kas Internal BPM</span>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="border border-slate-200/80 p-4 rounded-xl text-center bg-slate-50/50">
-                        <div class="text-xs text-slate-500 font-medium">Total Saldo Diberikan</div>
+                        <div class="text-xs text-slate-500 font-medium">Total Pagu Diberikan</div>
                         <div class="text-xl font-extrabold text-slate-900 mt-1 font-mono">Rp {{ number_format($saldoAwal, 0, ',', '.') }}</div>
                     </div>
                     <div class="border border-slate-200/80 p-4 rounded-xl text-center bg-slate-50/50">
@@ -92,6 +95,97 @@
                         <div class="text-xs text-slate-500 font-medium">Sisa Saldo Tersedia</div>
                         <div class="text-xl font-extrabold text-emerald-600 mt-1 font-mono">Rp {{ number_format(Auth::user()->saldo, 0, ',', '.') }}</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Widget Pengawasan: Monitoring Anggaran Seluruh Organisasi Mahasiswa ITG -->
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <h3 class="font-bold text-slate-900 text-base sm:text-lg">Pengawasan Anggaran Seluruh Organisasi Mahasiswa</h3>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">Pemantauan transparansi pagu anggaran, serapan dana kegiatan, dan sisa kas seluruh HIMA, UKM, dan BEM ITG.</p>
+                    </div>
+                    <a href="{{ route('bpm.anggaran.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs transition self-start sm:self-auto">
+                        <span>Buka Rekap Lengkap</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </a>
+                </div>
+
+                <!-- 4 KPI Global Anggaran Ormawa -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Pagu Kampus ITG</div>
+                        <div class="text-lg sm:text-xl font-extrabold text-slate-900 mt-1 font-mono">Rp {{ number_format($totalPaguAll ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                    <div class="p-4 bg-amber-50/70 border border-amber-200 rounded-xl">
+                        <div class="text-[11px] font-semibold text-amber-800 uppercase tracking-wider">Total Dana Terealisasi</div>
+                        <div class="text-lg sm:text-xl font-extrabold text-amber-700 mt-1 font-mono">Rp {{ number_format($totalTerpakaiAll ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                    <div class="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl">
+                        <div class="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider">Total Sisa Kas Bersama</div>
+                        <div class="text-lg sm:text-xl font-extrabold text-emerald-700 mt-1 font-mono">Rp {{ number_format($totalSisaAll ?? 0, 0, ',', '.') }}</div>
+                    </div>
+                    <div class="p-4 bg-indigo-50/70 border border-indigo-200 rounded-xl">
+                        <div class="text-[11px] font-semibold text-indigo-800 uppercase tracking-wider">Tingkat Serapan Total</div>
+                        <div class="text-lg sm:text-xl font-extrabold text-indigo-700 mt-1 font-mono">{{ $persenSerapanAll ?? 0 }}%</div>
+                    </div>
+                </div>
+
+                <!-- Preview Tabel Anggaran Ormawa -->
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="min-w-full divide-y divide-slate-200 text-xs text-left">
+                        <thead class="bg-slate-50 font-bold text-slate-600 uppercase tracking-wider">
+                            <tr>
+                                <th class="px-4 py-3 text-center w-12">No</th>
+                                <th class="px-4 py-3">Organisasi Mahasiswa</th>
+                                <th class="px-4 py-3">Pagu Awal</th>
+                                <th class="px-4 py-3">Terpakai</th>
+                                <th class="px-4 py-3">Sisa Kas</th>
+                                <th class="px-4 py-3 w-44">Serapan Anggaran</th>
+                                <th class="px-4 py-3 text-center w-28">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            @forelse(($allOrmawaWithSaldo ?? []) as $i => $ormawa)
+                                <tr class="hover:bg-slate-50/70 transition">
+                                    <td class="px-4 py-3 text-center font-bold text-slate-400">{{ $i + 1 }}</td>
+                                    <td class="px-4 py-3">
+                                        <div class="font-bold text-slate-900">{{ $ormawa['name'] }}</div>
+                                        <div class="flex items-center gap-1.5 mt-0.5">
+                                            <span class="px-1.5 py-0.2 rounded text-[10px] font-bold uppercase
+                                                {{ $ormawa['tipe'] === 'HIMA' ? 'bg-indigo-100 text-indigo-700' : ($ormawa['tipe'] === 'UKM' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800') }}">
+                                                {{ $ormawa['tipe'] }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 font-mono text-slate-600 whitespace-nowrap">Rp {{ number_format($ormawa['saldo_awal'], 0, ',', '.') }}</td>
+                                    <td class="px-4 py-3 font-mono font-bold text-amber-600 whitespace-nowrap">Rp {{ number_format($ormawa['terpakai'], 0, ',', '.') }}</td>
+                                    <td class="px-4 py-3 font-mono font-extrabold text-emerald-600 whitespace-nowrap">Rp {{ number_format($ormawa['saldo'], 0, ',', '.') }}</td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                                <div class="h-2 rounded-full {{ $ormawa['persen'] > 80 ? 'bg-rose-500' : ($ormawa['persen'] > 50 ? 'bg-amber-500' : 'bg-emerald-500') }}" style="width: {{ min(100, $ormawa['persen']) }}%;"></div>
+                                            </div>
+                                            <span class="font-mono font-bold text-slate-700 text-[11px] w-10 text-right">{{ $ormawa['persen'] }}%</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                                        <a href="{{ route('bpm.anggaran.show', $ormawa['id']) }}" class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-semibold rounded-lg text-[11px] border border-slate-200 hover:border-indigo-200 transition">
+                                            <span>Detail</span>
+                                            <span>&rarr;</span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="px-4 py-8 text-center text-slate-400">Belum ada data anggaran organisasi mahasiswa.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
 

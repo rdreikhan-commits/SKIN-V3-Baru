@@ -21,7 +21,7 @@ class ProdiDanSatgasExpansionTest extends TestCase
         $this->seed(RolePermissionSeeder::class);
     }
 
-    public function test_admin_can_create_prodi_account_with_kode_prodi()
+    public function test_admin_cannot_create_prodi_account_since_prodi_is_removed()
     {
         $admin = User::factory()->create();
         $admin->assignRole('admin');
@@ -36,15 +36,10 @@ class ProdiDanSatgasExpansionTest extends TestCase
             'kode_prodi' => 'TS',
         ]);
 
-        $response->assertRedirect(route('admin.users.index'));
-        $this->assertDatabaseHas('users', [
+        $response->assertSessionHasErrors('role');
+        $this->assertDatabaseMissing('users', [
             'username' => 'prodi_ts',
-            'prodi' => 'Teknik Sipil',
-            'kode_prodi' => 'TS',
         ]);
-
-        $user = User::where('username', 'prodi_ts')->first();
-        $this->assertTrue($user->hasRole('prodi'));
     }
 
     public function test_admin_can_create_satgas_ppks_account()
@@ -64,88 +59,6 @@ class ProdiDanSatgasExpansionTest extends TestCase
         $user = User::where('username', 'satgas_ppks26')->first();
         $this->assertNotNull($user);
         $this->assertTrue($user->hasRole('satgas_ppks'));
-    }
-
-    public function test_prodi_receives_in_app_notification_when_matching_hima_submits_proker()
-    {
-        $prodiIf = User::factory()->create([
-            'name' => 'Prodi Teknik Informatika',
-            'prodi' => 'Teknik Informatika',
-            'kode_prodi' => 'IF',
-        ]);
-        $prodiIf->assignRole('prodi');
-
-        $prodiSi = User::factory()->create([
-            'name' => 'Prodi Sistem Informasi',
-            'prodi' => 'Sistem Informasi',
-            'kode_prodi' => 'SI',
-        ]);
-        $prodiSi->assignRole('prodi');
-
-        $himaIf = User::factory()->create([
-            'name' => 'HIMATIF ITG',
-            'jenis_ormawa' => 'hima',
-            'prodi' => 'Teknik Informatika',
-            'kode_prodi' => 'IF',
-        ]);
-        $himaIf->assignRole('ormawa');
-
-        $response = $this->actingAs($himaIf)->post(route('proker.store'), [
-            'nama_proker' => 'Informatics Bootcamp 2026',
-            'deskripsi' => 'Pelatihan intensif coding untuk mahasiswa baru IF.',
-            'rencana_pelaksanaan' => now()->addDays(30)->toDateString(),
-        ]);
-
-        $response->assertRedirect(route('proker.index'));
-        $this->assertDatabaseHas('program_kerjas', [
-            'user_id' => $himaIf->id,
-            'nama_proker' => 'Informatics Bootcamp 2026',
-        ]);
-
-        // Prodi IF menerima notifikasi
-        $notifIf = Notifikasi::where('user_id', $prodiIf->id)->first();
-        $this->assertNotNull($notifIf);
-        $this->assertStringContainsString('Pemberitahuan Proker Baru', $notifIf->pesan);
-        $this->assertStringContainsString('Informatics Bootcamp 2026', $notifIf->pesan);
-
-        // Prodi SI tidak menerima notifikasi
-        $notifSi = Notifikasi::where('user_id', $prodiSi->id)->count();
-        $this->assertEquals(0, $notifSi);
-    }
-
-    public function test_prodi_can_only_view_prokers_from_their_own_study_program()
-    {
-        $prodiIf = User::factory()->create([
-            'name' => 'Prodi IF',
-            'prodi' => 'Teknik Informatika',
-            'kode_prodi' => 'IF',
-        ]);
-        $prodiIf->assignRole('prodi');
-
-        $himaIf = User::factory()->create(['prodi' => 'Teknik Informatika', 'kode_prodi' => 'IF']);
-        $himaIf->assignRole('ormawa');
-        $prokerIf = ProgramKerja::create([
-            'user_id' => $himaIf->id,
-            'nama_proker' => 'Lomba Web Development IF',
-            'deskripsi' => 'Deskripsi IF',
-            'rencana_pelaksanaan' => now()->addDays(10)->toDateString(),
-            'status' => 'rencana',
-        ]);
-
-        $himaSi = User::factory()->create(['prodi' => 'Sistem Informasi', 'kode_prodi' => 'SI']);
-        $himaSi->assignRole('ormawa');
-        $prokerSi = ProgramKerja::create([
-            'user_id' => $himaSi->id,
-            'nama_proker' => 'Seminar Enterprise SI',
-            'deskripsi' => 'Deskripsi SI',
-            'rencana_pelaksanaan' => now()->addDays(12)->toDateString(),
-            'status' => 'rencana',
-        ]);
-
-        $response = $this->actingAs($prodiIf)->get(route('proker.index'));
-        $response->assertStatus(200);
-        $response->assertSee('Lomba Web Development IF');
-        $response->assertDontSee('Seminar Enterprise SI');
     }
 
     public function test_satgas_ppks_can_issue_sp_and_forward_to_wr3()
@@ -189,15 +102,72 @@ class ProdiDanSatgasExpansionTest extends TestCase
         $this->assertStringContainsString('Satgas PPKS', $notifWr3->pesan);
     }
 
-    public function test_expanded_letter_generator_creates_new_letter_types()
+    public function test_satgas_ppks_can_issue_sp_for_ormawa_and_forward_to_wr3()
     {
-        $ormawa = User::factory()->create(['name' => 'HIMATIF ITG']);
-        $ormawa->assignRole('ormawa');
+        $satgas = User::factory()->create(['name' => 'Satgas PPKS ITG']);
+        $satgas->assignRole('satgas_ppks');
+
+        $ukm = User::factory()->create([
+            'name' => 'UKM Olahraga ITG',
+            'username' => 'ukmolahraga',
+        ]);
+        $ukm->assignRole('ormawa');
+
+        $wr3 = User::factory()->create(['name' => 'Wakil Rektor III']);
+        $wr3->assignRole('wr3');
+
+        $response = $this->actingAs($satgas)->post(route('satgas.sp.store'), [
+            'tipe_sasaran' => 'ormawa',
+            'target_user_id' => $ukm->id,
+            'nomor_surat' => 'SP/PPKS/2026/002',
+            'tingkat' => 'SP-1',
+            'perihal' => 'Peringatan Terkait Pelanggaran Kode Etik / Pencegahan Satgas PPKS',
+            'alasan_singkat' => 'Pelanggaran SOP dan pelaksanaan kegiatan tanpa mitigasi',
+            'deskripsi' => 'Berdasarkan temuan investigasi Satgas PPKS ITG, organisasi bersangkutan telah melanggar prosedur.',
+            'sanksi' => 'Teguran tertulis dan pembekuan kegiatan sampai evaluasi selesai.',
+            'tanggal_surat' => now()->toDateString(),
+        ]);
+
+        $response->assertRedirect(route('satgas.sp.index'));
+        $response->assertSessionHas('success');
+
+        $sp = SuratPeringatan::where('nomor_surat', 'SP/PPKS/2026/002')->first();
+        $this->assertNotNull($sp);
+        $this->assertEquals('ormawa', $sp->tipe_sasaran);
+        $this->assertEquals($ukm->id, $sp->target_user_id);
+        $this->assertEquals('menunggu_validasi', $sp->status);
+        $this->assertEquals('UKM Olahraga ITG', $sp->nama_penerima);
+        $this->assertEquals('Satgas PPKS', $sp->penerbit_label);
+
+        // Satgas dapat melihat detail SP
+        $responseShow = $this->actingAs($satgas)->get(route('satgas.sp.show', $sp));
+        $responseShow->assertStatus(200);
+        $responseShow->assertSee('UKM Olahraga ITG');
+
+        // WR3 dapat menyetujui SP untuk Ormawa
+        $responseApprove = $this->actingAs($wr3)->post(route('wr3.sp.approve', $sp), [
+            'catatan_wr3' => 'Disetujui untuk diterbitkan resmi ke organisasi.',
+        ]);
+        $responseApprove->assertRedirect(route('wr3.sp.index'));
+        $this->assertEquals('disetujui', $sp->fresh()->status);
+
+        // Satgas PPKS dapat mengunduh berkas PDF SP setelah disetujui
+        $responsePdf = $this->actingAs($satgas)->get(route('bkhm.sp.pdf', $sp));
+        $responsePdf->assertStatus(200);
+    }
+
+    public function test_expanded_letter_generator_creates_new_letter_types_for_ukm()
+    {
+        $ukm = User::factory()->create([
+            'name' => 'UKM Robotika ITG',
+            'jenis_ormawa' => 'ukm',
+        ]);
+        $ukm->assignRole('ormawa');
 
         // 1. Surat Izin Kegiatan
-        $respIzin = $this->actingAs($ormawa)->post(route('generator.letters.store'), [
+        $respIzin = $this->actingAs($ukm)->post(route('generator.letters.store'), [
             'type' => 'izin_kegiatan',
-            'nomor_surat' => '01/HIMA/IZIN/2026',
+            'nomor_surat' => '01/UKM/IZIN/2026',
             'perihal' => 'Permohonan Izin Kegiatan Seminar AI',
             'tujuan' => 'Dekan Fakultas Teknik ITG',
             'kalimat_pembuka' => 'Dengan hormat, kami memohon izin kegiatan:',
@@ -210,20 +180,20 @@ class ProdiDanSatgasExpansionTest extends TestCase
             'kalimat_penutup' => 'Demikian permohonan kami sampaikan.',
         ]);
         $respIzin->assertRedirect();
-        $letterIzin = Letter::where('nomor_surat', '01/HIMA/IZIN/2026')->first();
+        $letterIzin = Letter::where('nomor_surat', '01/UKM/IZIN/2026')->first();
         $this->assertNotNull($letterIzin);
         $this->assertEquals('izin_kegiatan', $letterIzin->type);
 
         // Preview & PDF view check
-        $respShow = $this->actingAs($ormawa)->get(route('generator.letters.show', $letterIzin));
+        $respShow = $this->actingAs($ukm)->get(route('generator.letters.show', $letterIzin));
         $respShow->assertStatus(200);
         $respShow->assertSee('SURAT PERMOHONAN IZIN KEGIATAN');
         $respShow->assertSee('Seminar AI 2026');
 
         // 2. Surat Dispensasi
-        $respDisp = $this->actingAs($ormawa)->post(route('generator.letters.store'), [
+        $respDisp = $this->actingAs($ukm)->post(route('generator.letters.store'), [
             'type' => 'dispensasi',
-            'nomor_surat' => '02/HIMA/DISP/2026',
+            'nomor_surat' => '02/UKM/DISP/2026',
             'perihal' => 'Dispensasi Kuliah Delegasi Lomba',
             'tujuan' => 'Dosen Pengampu Mata Kuliah',
             'nama_kegiatan' => 'Gemastik 2026',
@@ -235,17 +205,17 @@ class ProdiDanSatgasExpansionTest extends TestCase
             'keterangan_tugas' => 'Finalis Lomba Desain Web',
         ]);
         $respDisp->assertRedirect();
-        $letterDisp = Letter::where('nomor_surat', '02/HIMA/DISP/2026')->first();
+        $letterDisp = Letter::where('nomor_surat', '02/UKM/DISP/2026')->first();
         $this->assertNotNull($letterDisp);
         $this->assertEquals('dispensasi', $letterDisp->type);
 
-        $respShowDisp = $this->actingAs($ormawa)->get(route('generator.letters.show', $letterDisp));
+        $respShowDisp = $this->actingAs($ukm)->get(route('generator.letters.show', $letterDisp));
         $respShowDisp->assertStatus(200);
         $respShowDisp->assertSee('SURAT PERMOHONAN DISPENSASI KULIAH');
         $respShowDisp->assertSee('Budi Santoso');
     }
 
-    public function test_hima_submits_proker_sets_status_prodi_to_menunggu()
+    public function test_hima_cannot_access_proker_and_redirects_to_dashboard()
     {
         $hima = User::factory()->create([
             'name' => 'HIMATIF ITG',
@@ -255,157 +225,39 @@ class ProdiDanSatgasExpansionTest extends TestCase
         ]);
         $hima->assignRole('ormawa');
 
-        $this->actingAs($hima)->post(route('proker.store'), [
+        $responseIndex = $this->actingAs($hima)->get(route('proker.index'));
+        $responseIndex->assertRedirect(route('dashboard'));
+        $responseIndex->assertSessionHas('error');
+
+        $responseCreate = $this->actingAs($hima)->get(route('proker.create'));
+        $responseCreate->assertRedirect(route('dashboard'));
+
+        $responseStore = $this->actingAs($hima)->post(route('proker.store'), [
             'nama_proker' => 'Informatics Fest 2026',
             'deskripsi' => 'Kompetisi IT tahunan.',
             'rencana_pelaksanaan' => now()->addDays(45)->toDateString(),
-        ])->assertRedirect(route('proker.index'));
-
-        $proker = ProgramKerja::where('nama_proker', 'Informatics Fest 2026')->first();
-        $this->assertNotNull($proker);
-        $this->assertEquals('menunggu', $proker->status_prodi);
+        ]);
+        $responseStore->assertRedirect(route('dashboard'));
     }
 
-    public function test_prodi_can_acc_hima_proker_and_hima_receives_notification()
+    public function test_hima_cannot_access_letter_generator_except_lpj()
     {
-        $prodi = User::factory()->create([
-            'name' => 'Kaprodi Teknik Informatika',
-            'prodi' => 'Teknik Informatika',
-            'kode_prodi' => 'IF',
-        ]);
-        $prodi->assignRole('prodi');
-
         $hima = User::factory()->create([
-            'name' => 'HIMATIF ITG',
+            'name' => 'HIMA Informatika ITG',
             'jenis_ormawa' => 'hima',
-            'prodi' => 'Teknik Informatika',
-            'kode_prodi' => 'IF',
         ]);
         $hima->assignRole('ormawa');
 
-        $proker = ProgramKerja::create([
-            'user_id' => $hima->id,
-            'nama_proker' => 'Workshop UI/UX Design',
-            'deskripsi' => 'Workshop Figma bersama praktisi industri.',
-            'rencana_pelaksanaan' => now()->addDays(20)->toDateString(),
-            'status' => 'rencana',
-            'status_prodi' => 'menunggu',
-        ]);
+        // General proposal generator is blocked (redirects to pengajuan.create with notice)
+        $this->actingAs($hima)->get(route('generator.create'))
+            ->assertRedirect(route('pengajuan.create'));
 
-        $response = $this->actingAs($prodi)->put(route('proker.acc-prodi', $proker), [
-            'status_prodi' => 'disetujui',
-            'catatan_prodi' => 'Disetujui. Pastikan tidak bentrok dengan jadwal UTS.',
-        ]);
+        // General letters generator is blocked
+        $this->actingAs($hima)->get(route('generator.letters.create'))
+            ->assertRedirect(route('dashboard'));
 
-        $response->assertRedirect(route('proker.index'));
-
-        $proker->refresh();
-        $this->assertEquals('disetujui', $proker->status_prodi);
-        $this->assertEquals($prodi->id, $proker->prodi_id);
-        $this->assertNotNull($proker->disetujui_prodi_at);
-        $this->assertEquals('Disetujui. Pastikan tidak bentrok dengan jadwal UTS.', $proker->catatan_prodi);
-
-        // HIMA menerima notifikasi bahwa proker di-ACC
-        $notif = Notifikasi::where('user_id', $hima->id)->latest()->first();
-        $this->assertNotNull($notif);
-        $this->assertStringContainsString('Program Kerja Di-ACC', $notif->pesan);
-        $this->assertStringContainsString('Workshop UI/UX Design', $notif->pesan);
-    }
-
-    public function test_prodi_cannot_acc_proker_of_another_study_program()
-    {
-        $prodiSi = User::factory()->create([
-            'name' => 'Kaprodi Sistem Informasi',
-            'prodi' => 'Sistem Informasi',
-            'kode_prodi' => 'SI',
-        ]);
-        $prodiSi->assignRole('prodi');
-
-        $himaIf = User::factory()->create([
-            'name' => 'HIMATIF ITG',
-            'jenis_ormawa' => 'hima',
-            'prodi' => 'Teknik Informatika',
-            'kode_prodi' => 'IF',
-        ]);
-        $himaIf->assignRole('ormawa');
-
-        $prokerIf = ProgramKerja::create([
-            'user_id' => $himaIf->id,
-            'nama_proker' => 'AI Bootcamp IF',
-            'deskripsi' => 'Bootcamp AI.',
-            'rencana_pelaksanaan' => now()->addDays(15)->toDateString(),
-            'status' => 'rencana',
-            'status_prodi' => 'menunggu',
-        ]);
-
-        // Kaprodi SI tidak berhak ACC proker milik HIMA IF
-        $this->actingAs($prodiSi)->put(route('proker.acc-prodi', $prokerIf), [
-            'status_prodi' => 'disetujui',
-        ])->assertForbidden();
-
-        $prokerIf->refresh();
-        $this->assertEquals('menunggu', $prokerIf->status_prodi);
-    }
-
-    public function test_hima_cannot_submit_proposal_for_unapproved_proker_until_acc()
-    {
-        $prodi = User::factory()->create([
-            'name' => 'Kaprodi Teknik Informatika',
-            'prodi' => 'Teknik Informatika',
-            'kode_prodi' => 'IF',
-        ]);
-        $prodi->assignRole('prodi');
-
-        $hima = User::factory()->create([
-            'name' => 'HIMATIF ITG',
-            'jenis_ormawa' => 'hima',
-            'prodi' => 'Teknik Informatika',
-            'kode_prodi' => 'IF',
-            'saldo' => 10000000,
-        ]);
-        $hima->assignRole('ormawa');
-
-        $proker = ProgramKerja::create([
-            'user_id' => $hima->id,
-            'nama_proker' => 'Seminar Cloud Computing',
-            'deskripsi' => 'Seminar bersama AWS Community.',
-            'rencana_pelaksanaan' => now()->addDays(25)->toDateString(),
-            'status' => 'rencana',
-            'status_prodi' => 'menunggu', // Belum di-ACC
-        ]);
-
-        $file = \Illuminate\Http\UploadedFile::fake()->create('proposal.pdf', 300, 'application/pdf');
-
-        // 1. Coba ajukan proposal dengan proker yang statusnya masih 'menunggu'
-        $respPending = $this->actingAs($hima)->post(route('pengajuan.store'), [
-            'nama_kegiatan' => 'Seminar Cloud Computing 2026',
-            'dana_diajukan' => 1500000,
-            'tanggal_pengajuan' => now()->toDateString(),
-            'program_kerja_id' => $proker->id,
-            'file_proposal' => $file,
-        ]);
-
-        $respPending->assertSessionHasErrors('program_kerja_id');
-
-        // 2. Sekarang Kaprodi menyetujui (ACC) proker tersebut
-        $this->actingAs($prodi)->put(route('proker.acc-prodi', $proker), [
-            'status_prodi' => 'disetujui',
-        ])->assertRedirect();
-
-        // 3. Setelah di-ACC, HIMA berhasil mengajukan proposal
-        $respSuccess = $this->actingAs($hima)->post(route('pengajuan.store'), [
-            'nama_kegiatan' => 'Seminar Cloud Computing 2026',
-            'dana_diajukan' => 1500000,
-            'tanggal_pengajuan' => now()->toDateString(),
-            'program_kerja_id' => $proker->id,
-            'file_proposal' => $file,
-        ]);
-
-        $respSuccess->assertRedirect(route('pengajuan.index'));
-        $this->assertDatabaseHas('pengajuan', [
-            'nama_kegiatan' => 'Seminar Cloud Computing 2026',
-            'program_kerja_id' => $proker->id,
-        ]);
+        // LPJ generator is allowed
+        $this->actingAs($hima)->get(route('generator.lpj.create'))
+            ->assertStatus(200);
     }
 }
-

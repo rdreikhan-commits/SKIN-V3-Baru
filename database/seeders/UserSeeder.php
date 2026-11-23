@@ -116,20 +116,6 @@ class UserSeeder extends Seeder
                 'role' => 'sarpras'
             ],
             [
-                'name' => 'Program Studi S1 Teknik Informatika',
-                'username' => 'prodi_if',
-                'email' => env('PRODI_IF_EMAIL', 'prodi.if@' . $domain),
-                'password' => Hash::make(env('PRODI_IF_PASSWORD', $defaultPassword)),
-                'foto_profil' => 'profil/logo_itg.png',
-                'logo_ormawa' => 'profil/logo_itg.png',
-                'alamat' => $defaultAlamat,
-                'prodi' => 'Teknik Informatika',
-                'kode_prodi' => 'IF',
-                'nama_ketua' => 'Yusuf Ramdani, S.Kom., M.Kom.',
-                'nim_ketua' => '0412088501',
-                'role' => 'prodi'
-            ],
-            [
                 'name' => 'Satuan Tugas PPKS ITG',
                 'username' => 'satgas_ppks',
                 'email' => env('SATGAS_PPKS_EMAIL', 'satgas.ppks@' . $domain),

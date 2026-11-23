@@ -117,6 +117,14 @@ class DigitalSignatureService
     /**
      * Bubuhkan tanda tangan untuk setiap penandatangan internal dalam satu daftar.
      * Entri berjenis 'eksternal' dilewati karena ditandatangani manual di luar sistem.
+     * 
+     * KEAMANAN TTD DIGITAL:
+     * Tanda tangan digital kriptografis (QR Code) HANYA diperuntukkan bagi Pengurus & Panitia
+     * Ormawa Mahasiswa (ber-NIM). Pejabat Kampus (Dosen Pembina, Pembimbing, Kaprodi, Dekan, WR3,
+     * Rektor, BKHM, dll.) serta pihak eksternal TIDAK BOLEH dibuatkan TTD digital otomatis
+     * guna mencegah pemalsuan dan penyalahgunaan wewenang tanda tangan.
+     * Pejabat/Pihak luar wajib menandatangani fisik/basah pada lembar dokumen.
+     *
      * Mengembalikan peta tanda tangan berdasarkan signer_index (posisi di daftar).
      */
     public static function signMany(Model $model, array $signers, ?User $actor): array
@@ -124,15 +132,57 @@ class DigitalSignatureService
         $signed = [];
         $keep = [];
 
+        $restrictedRoles = [
+            'pembina', 'pembimbing', 'kaprodi', 'prodi', 'dekan', 'dosen',
+            'wr3', 'wr3_lpj', 'bkhm', 'bkhm_lpj', 'rektor', 'pejabat', 'bauk', 'warek', 'eksternal'
+        ];
+
         foreach ($signers as $index => $signer) {
-            if (($signer['jenis'] ?? 'internal') === 'eksternal') {
+            $jenis = $signer['jenis'] ?? 'internal';
+            if ($jenis === 'eksternal') {
+                continue;
+            }
+
+            $roleKey = strtolower($signer['role'] ?? '');
+            $jabatanKey = strtolower($signer['jabatan'] ?? '');
+            $namaKey = strtolower($signer['nama'] ?? '');
+            $labelKey = strtoupper($signer['identitas_label'] ?? ($signer['label_id'] ?? ''));
+
+            $isStudentRole = in_array($roleKey, ['ketua', 'sekretaris', 'bendahara', 'ketua_pelaksana', 'sekretaris_pelaksana', 'bendahara_pelaksana', 'anggota', 'panitia', 'ormawa', 'bem', 'bpm', 'pelaksana'], true);
+
+            $isNonStudentOfficial = in_array($roleKey, $restrictedRoles, true)
+                || in_array($labelKey, ['NIDN', 'NIP'], true)
+                || !empty($signer['nidn'])
+                || (!$isStudentRole && (
+                    str_contains($jabatanKey, 'dosen')
+                    || str_contains($jabatanKey, 'rektor')
+                    || str_contains($jabatanKey, 'dekan')
+                    || str_contains($jabatanKey, 'kaprodi')
+                    || str_contains($jabatanKey, 'prodi')
+                    || str_contains($jabatanKey, 'pembina')
+                    || str_contains($jabatanKey, 'pembimbing')
+                    || str_contains($jabatanKey, 'pejabat')
+                    || str_contains($jabatanKey, 'wr3')
+                    || str_contains($jabatanKey, 'bkhm')
+                    || str_contains($jabatanKey, 'bendahara kampus')
+                    || str_contains($namaKey, 'dr.')
+                    || str_contains($namaKey, 'prof.')
+                    || str_contains($namaKey, 'm.t.')
+                    || str_contains($namaKey, 'm.kom')
+                    || str_contains($namaKey, 'm.pd')
+                    || str_contains($namaKey, 's.t., m.t')
+                    || str_contains($namaKey, 's.kom., m.kom')
+                ));
+
+            if ($isNonStudentOfficial) {
+                // Jangan bubuhkan TTD digital untuk dosen/pejabat kampus (wajib manual tanda tangan basah)
                 continue;
             }
 
             $signed[$index] = self::sign(
                 $model,
                 $actor,
-                $signer['role'] ?? 'pejabat',
+                $signer['role'] ?? 'ormawa',
                 [
                     'nama' => $signer['nama'] ?? null,
                     'jabatan' => $signer['jabatan'] ?? null,

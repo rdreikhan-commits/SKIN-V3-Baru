@@ -87,14 +87,41 @@ class NavigationMenuTest extends TestCase
         $response->assertSee(route('bendahara.export.pdf'));
     }
 
-    public function test_ormawa_can_see_prestasi_menu(): void
+    public function test_ormawa_ukm_can_see_prestasi_and_sarpras_menu(): void
     {
         $ormawa = $this->createUserWithRole('ormawa');
+        $ormawa->update(['jenis_ormawa' => 'ukm', 'name' => 'UKM Seni ITG']);
 
         $response = $this->actingAs($ormawa)->get(route('dashboard'));
 
         $response->assertStatus(200);
         $response->assertSee(route('pengajuan.create'));
         $response->assertSee(route('prestasi.index'));
+        $response->assertSee(route('peminjaman.tempat.create'));
+        $response->assertSee(route('proker.index'));
+    }
+
+    public function test_hima_navigation_only_shows_dana_non_akademik_and_lpj(): void
+    {
+        $hima = $this->createUserWithRole('ormawa');
+        $hima->update(['jenis_ormawa' => 'hima', 'name' => 'HIMA Informatika']);
+
+        $response = $this->actingAs($hima)->get(route('dashboard'));
+
+        $response->assertStatus(200);
+        // HIMA melihat menu Dana Non-Akademik & LPJ
+        $response->assertSee(route('pengajuan.create'));
+        $response->assertSee(route('pengajuan.index'));
+        $response->assertSee(route('generator.lpj.create'));
+        $response->assertSee(route('lpj.index'));
+        $response->assertSee('Dana Non-Akademik');
+
+        // HIMA TIDAK melihat menu Sarpras, Proker, Persuratan Lain, Prestasi
+        $response->assertDontSee(route('peminjaman.tempat.create'));
+        $response->assertDontSee(route('peminjaman.barang.create'));
+        $response->assertDontSee(route('proker.index'));
+        $response->assertDontSee(route('generator.create'));
+        $response->assertDontSee(route('generator.letters.create'));
+        $response->assertDontSee(route('prestasi.index'));
     }
 }

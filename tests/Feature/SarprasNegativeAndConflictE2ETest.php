@@ -36,14 +36,14 @@ class SarprasNegativeAndConflictE2ETest extends TestCase
     /** Skenario 1: Bentrok jadwal perkuliahan rutin mingguan (Q-SAR-02) */
     public function test_bentrok_jadwal_perkuliahan_rutin_ditolak(): void
     {
-        $hima = $this->createUser('ormawa', 'HIMA Informatika', true);
+        $ukm = $this->createUser('ormawa', 'UKM Informatika');
         $ruangan = MasterRuangan::where('nama_ruangan', 'Ruang Kelas A101')->first();
         $file = UploadedFile::fake()->create('persetujuan_prodi.pdf', 100, 'application/pdf');
 
         // Jadwal kuliah di Ruang Kelas A101 hari Senin (1) jam 08:00 - 10:30
         // Coba pinjam di hari Senin mendatang jam 09:00 - 11:00 (beririsan)
         $seninDepan = now()->next(\Carbon\Carbon::MONDAY)->toDateString();
-        $response = $this->actingAs($hima)->post(route('peminjaman.tempat.store'), [
+        $response = $this->actingAs($ukm)->post(route('peminjaman.tempat.store'), [
             'ruangan_id' => $ruangan->id,
             'nama_kegiatan' => 'Kegiatan Bentrok Jadwal Kuliah',
             'tgl_mulai' => $seninDepan,
@@ -63,7 +63,7 @@ class SarprasNegativeAndConflictE2ETest extends TestCase
     public function test_bentrok_peminjaman_ruangan_ganda_ditolak(): void
     {
         $bem = $this->createUser('bem', 'BEM ITG');
-        $hima = $this->createUser('ormawa', 'HIMA Informatika', true);
+        $ukm = $this->createUser('ormawa', 'UKM Informatika');
         $ruangan = MasterRuangan::where('nama_ruangan', 'Aula Gedung Rektorat')->first();
         $file = UploadedFile::fake()->create('persetujuan_prodi.pdf', 100, 'application/pdf');
 
@@ -82,10 +82,10 @@ class SarprasNegativeAndConflictE2ETest extends TestCase
             'status_akhir' => 'Selesai / Disetujui',
         ]);
 
-        // HIMA mencoba booking pada jam 14:00 - 17:00 (overlap)
-        $response = $this->actingAs($hima)->post(route('peminjaman.tempat.store'), [
+        // UKM mencoba booking pada jam 14:00 - 17:00 (overlap)
+        $response = $this->actingAs($ukm)->post(route('peminjaman.tempat.store'), [
             'ruangan_id' => $ruangan->id,
-            'nama_kegiatan' => 'Booking Ganda HIMA',
+            'nama_kegiatan' => 'Booking Ganda UKM',
             'tgl_mulai' => $tglBooking,
             'tgl_selesai' => $tglBooking,
             'jam_mulai' => '14:00',
@@ -95,7 +95,7 @@ class SarprasNegativeAndConflictE2ETest extends TestCase
 
         $response->assertSessionHas('error', 'Ruangan sudah dibooking pada tanggal/waktu tersebut.');
         $this->assertDatabaseMissing('peminjaman_tempat', [
-            'nama_kegiatan' => 'Booking Ganda HIMA',
+            'nama_kegiatan' => 'Booking Ganda UKM',
         ]);
     }
 

@@ -89,8 +89,7 @@ class PeminjamanSarprasBkhmWorkflowTest extends TestCase
     }
 
     /**
-     * HIMA mengajukan peminjaman tempat TANPA dokumen persetujuan prodi.
-     * Harus berhasil disimpan dan langsung diarahkan ke 'Proses BKHM'.
+     * HIMA diblokir dari pengajuan peminjaman tempat (khusus Dana Non-Akademik & LPJ).
      */
     public function test_hima_submits_tempat_without_prodi_file_enters_bkhm_queue(): void
     {
@@ -105,18 +104,8 @@ class PeminjamanSarprasBkhmWorkflowTest extends TestCase
             'deskripsi_kegiatan' => 'Kegiatan seminar tahunan HIMA SI',
         ]);
 
-        $response->assertRedirect(route('peminjaman.tempat.index'));
-        $response->assertSessionHas('success');
-
-        $this->assertDatabaseHas('peminjaman_tempat', [
-            'user_id' => $this->hima->id,
-            'ruangan_id' => $this->ruangan->id,
-            'nama_kegiatan' => 'Seminar Teknologi Informasi HIMA SI',
-            'file_persetujuan_prodi' => null,
-            'status_bkhm' => 'pending',
-            'status_sarpras' => 'pending',
-            'status_akhir' => 'Proses BKHM',
-        ]);
+        $response->assertRedirect(route('dashboard'));
+        $response->assertSessionHas('error');
     }
 
     /**
@@ -152,11 +141,12 @@ class PeminjamanSarprasBkhmWorkflowTest extends TestCase
      */
     public function test_bem_submits_tempat_enters_bkhm_queue(): void
     {
+        $futureDate = now()->addDays(5)->format('Y-m-d');
         $response = $this->actingAs($this->bem)->post(route('peminjaman.tempat.store'), [
             'ruangan_id' => $this->ruangan->id,
             'nama_kegiatan' => 'Sidang Pleno BEM ITG',
-            'tgl_mulai' => '2026-10-20',
-            'tgl_selesai' => '2026-10-20',
+            'tgl_mulai' => $futureDate,
+            'tgl_selesai' => $futureDate,
             'jam_mulai' => '13:00',
             'jam_selesai' => '17:00',
         ]);
@@ -175,27 +165,28 @@ class PeminjamanSarprasBkhmWorkflowTest extends TestCase
      */
     public function test_full_approval_lifecycle_from_bkhm_to_sarpras(): void
     {
-        // 1. HIMA mengajukan peminjaman ruangan
-        $this->actingAs($this->hima)->post(route('peminjaman.tempat.store'), [
+        $futureDate = now()->addDays(6)->format('Y-m-d');
+        // 1. UKM mengajukan peminjaman ruangan
+        $this->actingAs($this->ukm)->post(route('peminjaman.tempat.store'), [
             'ruangan_id' => $this->ruangan->id,
-            'nama_kegiatan' => 'Pelatihan Coding Bersama HIMA',
-            'tgl_mulai' => '2026-10-25',
-            'tgl_selesai' => '2026-10-25',
+            'nama_kegiatan' => 'Pelatihan Coding Bersama UKM',
+            'tgl_mulai' => $futureDate,
+            'tgl_selesai' => $futureDate,
             'jam_mulai' => '09:00',
             'jam_selesai' => '11:00',
         ]);
 
-        $peminjaman = PeminjamanTempat::where('nama_kegiatan', 'Pelatihan Coding Bersama HIMA')->firstOrFail();
+        $peminjaman = PeminjamanTempat::where('nama_kegiatan', 'Pelatihan Coding Bersama UKM')->firstOrFail();
 
         // 2. Sarpras belum melihat pengajuan ini di antriannya karena belum disetujui BKHM
         $responseSarprasAwal = $this->actingAs($this->sarpras)->get(route('peminjaman.verifikasi.index'));
         $responseSarprasAwal->assertOk();
-        $responseSarprasAwal->assertDontSee('Pelatihan Coding Bersama HIMA');
+        $responseSarprasAwal->assertDontSee('Pelatihan Coding Bersama UKM');
 
         // 3. BKHM melihat di antrian dan menyetujui
         $responseBkhm = $this->actingAs($this->bkhm)->get(route('peminjaman.verifikasi.index'));
         $responseBkhm->assertOk();
-        $responseBkhm->assertSee('Pelatihan Coding Bersama HIMA');
+        $responseBkhm->assertSee('Pelatihan Coding Bersama UKM');
 
         $approveBkhm = $this->actingAs($this->bkhm)->post(route('peminjaman.tempat.proses', $peminjaman), [
             'aksi' => 'setuju',
@@ -210,7 +201,7 @@ class PeminjamanSarprasBkhmWorkflowTest extends TestCase
         // 4. Sekarang Sarpras melihat pengajuan di antrian dan menyetujui
         $responseSarpras = $this->actingAs($this->sarpras)->get(route('peminjaman.verifikasi.index'));
         $responseSarpras->assertOk();
-        $responseSarpras->assertSee('Pelatihan Coding Bersama HIMA');
+        $responseSarpras->assertSee('Pelatihan Coding Bersama UKM');
 
         $approveSarpras = $this->actingAs($this->sarpras)->post(route('peminjaman.tempat.proses', $peminjaman), [
             'aksi' => 'setuju',

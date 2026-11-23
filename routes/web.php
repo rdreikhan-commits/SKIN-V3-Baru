@@ -126,6 +126,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/sp/create', [\App\Http\Controllers\Bpm\SpController::class, 'create'])->name('sp.create');
         Route::post('/sp', [\App\Http\Controllers\Bpm\SpController::class, 'store'])->name('sp.store');
         Route::get('/sp/{sp}', [\App\Http\Controllers\Bpm\SpController::class, 'show'])->name('sp.show');
+        // Monitoring Anggaran Seluruh Organisasi Mahasiswa ITG
+        Route::get('/anggaran', [\App\Http\Controllers\Bpm\AnggaranController::class, 'index'])->name('anggaran.index');
+        Route::get('/anggaran/{user}', [\App\Http\Controllers\Bpm\AnggaranController::class, 'show'])->name('anggaran.show');
     });
 
     // BPM legacy aspirasi: removed duplicate global /aspirasi (kept only bpm/aspirasi.* to avoid shadow)
@@ -212,8 +215,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/dokumen/peminjaman-barang/{peminjaman}/prodi', [DocumentController::class, 'persetujuanProdiBarang'])->name('dokumen.peminjaman-barang.prodi');
     Route::get('/dokumen/sk-ormawa/{user}', [DocumentController::class, 'skOrmawa'])->name('dokumen.sk-ormawa');
 
-    // Verifikator Roles: Modul Verifikasi (BEM, BPM, BKHM, WR3, Bendahara, Prodi, Satgas PPKS)
-    Route::middleware(['role:bem|bpm|bkhm|wr3|bendahara|admin|prodi|satgas_ppks', 'admin.readonly'])->group(function () {
+    // Verifikator Roles: Modul Verifikasi (BEM, BPM, BKHM, WR3, Bendahara, Satgas PPKS)
+    Route::middleware(['role:bem|bpm|bkhm|wr3|bendahara|admin|satgas_ppks', 'admin.readonly'])->group(function () {
         Route::get('/verifikasi', [VerifikasiController::class, 'index'])->name('verifikasi.index');
         Route::get('/verifikasi/{pengajuan}', [VerifikasiController::class, 'show'])->name('verifikasi.show');
         Route::post('/verifikasi/{pengajuan}/process', [VerifikasiController::class, 'process'])->name('verifikasi.process');
@@ -258,7 +261,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/bkhm/surat-peringatan/{sp}/pdf', [\App\Http\Controllers\Bkhm\BkhmController::class, 'spPdf'])
-        ->middleware(['role:bkhm|wr3|admin', 'admin.readonly'])
+        ->middleware(['role:bkhm|wr3|admin|satgas_ppks', 'admin.readonly'])
         ->name('bkhm.sp.pdf');
 
     // BKHM Khusus: 8 menu sesuai spec
@@ -340,9 +343,6 @@ Route::middleware('auth')->group(function () {
     });
     Route::middleware(['role:bpm|admin'])->group(function () {
         Route::put('/proker/{proker}', [ProgramKerjaController::class, 'update'])->name('proker.update');
-    });
-    Route::middleware(['role:prodi|admin'])->group(function () {
-        Route::put('/proker/{proker}/acc-prodi', [ProgramKerjaController::class, 'accProdi'])->name('proker.acc-prodi');
     });
 
     // FR-020: Pelaporan Prestasi / Kompetisi (mahasiswa, ormawa, verifikator)

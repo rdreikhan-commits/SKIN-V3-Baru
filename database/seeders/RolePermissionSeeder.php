@@ -22,7 +22,6 @@ class RolePermissionSeeder extends Seeder
             'bendahara',
             'sarpras',
             'mahasiswa',
-            'prodi',
             'satgas_ppks'
         ];
 

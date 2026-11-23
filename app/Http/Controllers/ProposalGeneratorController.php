@@ -17,6 +17,10 @@ class ProposalGeneratorController extends Controller
 {
     public function index()
     {
+        if (Auth::user()->isHima()) {
+            return redirect()->route('pengajuan.index')->with('info', 'Himpunan Mahasiswa difokuskan pada Pengajuan Dana Non-Akademik dan LPJ.');
+        }
+
         $proposals = Auth::user()->hasRole('admin')
             ? ProposalOtomatis::with('user')->latest()->get()
             : ProposalOtomatis::where('user_id', Auth::id())->latest()->get();
@@ -25,11 +29,19 @@ class ProposalGeneratorController extends Controller
 
     public function create()
     {
+        if (Auth::user()->isHima()) {
+            return redirect()->route('pengajuan.create')->with('info', 'Silakan gunakan form Pengajuan Dana Non-Akademik.');
+        }
+
         return view('generator.create');
     }
 
     public function store(Request $request)
     {
+        if (Auth::user()->isHima()) {
+            return redirect()->route('pengajuan.create')->with('info', 'Silakan gunakan form Pengajuan Dana Non-Akademik.');
+        }
+
         $request->validate([
             'nama_kegiatan' => 'required|string|max:255',
             'jenis_proposal' => 'nullable|string|in:kegiatan,pengadaan_barang,pendanaan_lomba',
@@ -130,6 +142,10 @@ class ProposalGeneratorController extends Controller
 
     public function createLetter()
     {
+        if (Auth::user()->isHima()) {
+            return redirect()->route('dashboard')->with('error', 'Fitur generator persuratan umum tidak dibuka untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        }
+
         return view('generator.letters.create');
     }
 
@@ -186,8 +202,10 @@ class ProposalGeneratorController extends Controller
             }
 
             // Deteksi cerdas apakah penandatangan adalah Dosen/Pembina atau Mahasiswa
-            $isDosenRole = in_array($roleLower, ['pembina', 'pembimbing', 'kaprodi', 'prodi', 'dekan', 'dosen', 'wr3', 'bkhm', 'bendahara']);
-            $isDosenJabatan = str_contains($jabatanLower, 'dosen')
+            $isStudentRole = in_array($roleLower, ['ketua', 'sekretaris', 'bendahara', 'ketua_pelaksana', 'sekretaris_pelaksana', 'bendahara_pelaksana', 'anggota', 'panitia'], true);
+            $isDosenRole = !$isStudentRole && in_array($roleLower, ['pembina', 'pembimbing', 'kaprodi', 'prodi', 'dekan', 'dosen', 'wr3', 'bkhm', 'rektor', 'pejabat']);
+            $isDosenJabatan = !$isStudentRole && (
+                str_contains($jabatanLower, 'dosen')
                 || str_contains($jabatanLower, 'pembina')
                 || str_contains($jabatanLower, 'pembimbing')
                 || str_contains($jabatanLower, 'kaprodi')
@@ -199,7 +217,8 @@ class ProposalGeneratorController extends Controller
                 || str_contains($jabatanLower, 'bkhm')
                 || str_contains($jabatanLower, 'bendahara kampus')
                 || str_contains($jabatanLower, 'nidn')
-                || str_contains($jabatanLower, 'nip');
+                || str_contains($jabatanLower, 'nip')
+            );
 
             $namaLower = strtolower($nama);
             $hasAcademicDegree = str_contains($namaLower, 'dr.')
@@ -212,6 +231,12 @@ class ProposalGeneratorController extends Controller
 
             $isDosen = ($explicitLabel === 'NIDN' || $explicitLabel === 'NIP') || $isDosenRole || $isDosenJabatan || $hasAcademicDegree;
             $finalLabel = $explicitLabel ?: ($isDosen ? 'NIDN' : 'NIM');
+
+            // Keamanan TTD Digital: Dosen, Dekan, Rektor, dan pejabat kampus SELALU berjenis 'eksternal'
+            // (tanda tangan manual basah), TIDAK BOLEH dibuatkan tanda tangan digital QR otomatis oleh mahasiswa.
+            if ($isDosen) {
+                $tipe = 'eksternal';
+            }
 
             $list[] = [
                 'jenis'            => $tipe,
@@ -243,6 +268,10 @@ class ProposalGeneratorController extends Controller
 
     public function storeLetter(Request $request)
     {
+        if (Auth::user()->isHima()) {
+            return redirect()->route('dashboard')->with('error', 'Fitur generator persuratan umum tidak dibuka untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        }
+
         $kalimatPembuka = $request->input('kalimat_pembuka')
             ?: ($request->input('kalimat_pembuka_' . $request->type)
             ?: ($request->input('kalimat_pembuka_tugas')
@@ -615,19 +644,50 @@ class ProposalGeneratorController extends Controller
     public function createLpj($proposalId = null)
     {
         $proposal = null;
+        $pengajuan = null;
+        $jenisLpjDefault = request()->query('jenis_lpj', 'kegiatan');
+
         if ($proposalId) {
             $proposal = ProposalOtomatis::find($proposalId);
-            if ($proposal && $proposal->user_id !== Auth::id() && !Auth::user()->hasAnyRole(['bem', 'bpm', 'bkhm', 'wr3', 'bendahara', 'admin'])) {
+            if (!$proposal) {
+                $pengajuan = \App\Models\Pengajuan::find($proposalId);
+            }
+        }
+
+        if (request()->has('pengajuan_id')) {
+            $pengajuan = \App\Models\Pengajuan::find(request()->query('pengajuan_id'));
+        }
+
+        if ($proposal) {
+            if ($proposal->user_id !== Auth::id() && !Auth::user()->hasAnyRole(['bem', 'bpm', 'bkhm', 'wr3', 'bendahara', 'admin'])) {
                 abort(403);
+            }
+            if (!empty($proposal->jenis_proposal)) {
+                $jenisLpjDefault = $proposal->jenis_proposal;
+            }
+        }
+
+        if ($pengajuan) {
+            if ($pengajuan->user_id !== Auth::id() && !Auth::user()->hasAnyRole(['bem', 'bpm', 'bkhm', 'wr3', 'bendahara', 'admin'])) {
+                abort(403);
+            }
+            if (!empty($pengajuan->jenis_pengajuan)) {
+                $jenisLpjDefault = $pengajuan->jenis_pengajuan;
             }
         }
         
-        return view('generator.lpj.create', compact('proposal'));
+        return view('generator.lpj.create', compact('proposal', 'pengajuan', 'jenisLpjDefault'));
     }
 
     public function storeLpj(Request $request)
     {
+        $jenisLpj = $request->input('jenis_lpj', 'kegiatan');
+        if (!in_array($jenisLpj, ['kegiatan', 'pengadaan_barang', 'pendanaan_lomba'])) {
+            $jenisLpj = 'kegiatan';
+        }
+
         $request->validate([
+            'jenis_lpj' => 'nullable|string|in:kegiatan,pengadaan_barang,pendanaan_lomba',
             'nama_kegiatan' => 'required|string',
             'tahun_akademik' => 'nullable|string',
             'waktu_hari_tanggal' => 'nullable|string',
@@ -644,6 +704,23 @@ class ProposalGeneratorController extends Controller
             'hambatan' => 'nullable|string',
             'upaya_mengatasi' => 'nullable|string',
             'penutup' => 'nullable|string',
+            // Field khusus Pengadaan Barang
+            'urgensi_pengadaan' => 'nullable|string',
+            'pemanfaatan_aset' => 'nullable|string',
+            'bast_klausul' => 'nullable|string',
+            'sop_pemeliharaan' => 'nullable|string',
+            'lokasi_penempatan' => 'nullable|string',
+            'penanggung_jawab_aset' => 'nullable|string',
+            'barang_items' => 'nullable|array',
+            // Field khusus Delegasi Perlombaan
+            'penyelenggara_lomba' => 'nullable|string',
+            'tingkat_kejuaraan' => 'nullable|string',
+            'dosen_pendamping' => 'nullable|string',
+            'capaian_prestasi' => 'nullable|string',
+            'tahapan_seleksi' => 'nullable|string',
+            'evaluasi_lomba' => 'nullable|string',
+            'delegasi_items' => 'nullable|array',
+            // File upload
             'foto_dokumentasi.*' => 'nullable|image|max:10240',
             'bukti_pembayaran.*' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',
             'file_lampiran_pdf'  => 'nullable|file|mimes:pdf|max:10240',
@@ -694,44 +771,73 @@ class ProposalGeneratorController extends Controller
         }
 
         $daftarHadirItems = $request->daftar_hadir_items ?? [];
+        $barangItems = $request->barang_items ?? [];
+        $delegasiItems = $request->delegasi_items ?? [];
+
+        $perihalPrefix = match($jenisLpj) {
+            'pengadaan_barang' => 'Laporan Pertanggungjawaban (LPJ) Pengadaan Barang - ',
+            'pendanaan_lomba' => 'Laporan Pertanggungjawaban (LPJ) Delegasi Perlombaan - ',
+            default => 'Laporan Pertanggungjawaban (LPJ) - ',
+        };
+
+        $contentData = [
+            'jenis_lpj' => $jenisLpj,
+            'tahun_akademik' => $request->tahun_akademik ?? '2024-2025',
+            'waktu_hari_tanggal' => $request->waktu_hari_tanggal,
+            'waktu_jam' => $request->waktu_jam,
+            'tempat' => $request->tempat ?? $request->lokasi_penempatan,
+            'tujuan_kegiatan' => $request->tujuan_kegiatan ?? $request->urgensi_pengadaan,
+            'sasaran_kegiatan' => $request->sasaran_kegiatan ?? $request->pemanfaatan_aset,
+            'ruang_lingkup' => $request->ruang_lingkup,
+            'metode_kegiatan' => $request->metode_kegiatan ?? $request->bast_klausul,
+            'tahapan_kegiatan' => $request->tahapan_kegiatan ?? $request->tahapan_seleksi,
+            'peserta_deskripsi' => $request->peserta_deskripsi ?? $request->dosen_pendamping,
+            'jadwal_kegiatan' => $request->jadwal_kegiatan,
+            'indikator_keberhasilan' => $request->indikator_keberhasilan ?? $request->capaian_prestasi,
+            'hambatan' => $request->hambatan,
+            'upaya_mengatasi' => $request->upaya_mengatasi ?? $request->evaluasi_lomba,
+            'penutup' => $request->penutup,
+            // Spesifik Pengadaan Barang
+            'urgensi_pengadaan' => $request->urgensi_pengadaan,
+            'pemanfaatan_aset' => $request->pemanfaatan_aset,
+            'bast_klausul' => $request->bast_klausul,
+            'sop_pemeliharaan' => $request->sop_pemeliharaan,
+            'lokasi_penempatan' => $request->lokasi_penempatan,
+            'penanggung_jawab_aset' => $request->penanggung_jawab_aset,
+            // Spesifik Delegasi Perlombaan
+            'penyelenggara_lomba' => $request->penyelenggara_lomba,
+            'tingkat_kejuaraan' => $request->tingkat_kejuaraan,
+            'dosen_pendamping' => $request->dosen_pendamping,
+            'capaian_prestasi' => $request->capaian_prestasi,
+            'tahapan_seleksi' => $request->tahapan_seleksi,
+            'evaluasi_lomba' => $request->evaluasi_lomba,
+            // Fallback compatibility
+            'pendahuluan' => $request->tujuan_kegiatan ?? $request->urgensi_pengadaan,
+            'waktu_tempat' => trim(($request->waktu_hari_tanggal ?? '') . ' ' . ($request->waktu_jam ?? '') . ' di ' . ($request->tempat ?? $request->lokasi_penempatan ?? '')),
+            'hasil_kegiatan' => $request->indikator_keberhasilan ?? $request->capaian_prestasi,
+            'saran' => $request->upaya_mengatasi ?? $request->evaluasi_lomba,
+            'is_draft' => ! $isPrint,
+        ];
 
         $lpj = \App\Models\Letter::create([
             'user_id' => Auth::id(),
             'proposal_otomatis_id' => $request->proposal_id,
             'type' => 'lpj',
-            'perihal' => 'Laporan Pertanggungjawaban (LPJ) - ' . $request->nama_kegiatan,
+            'perihal' => $perihalPrefix . $request->nama_kegiatan,
             'file_lampiran_pdf' => $lampiranPdfPath,
-            'content' => json_encode([
-                'tahun_akademik' => $request->tahun_akademik ?? '2024-2025',
-                'waktu_hari_tanggal' => $request->waktu_hari_tanggal,
-                'waktu_jam' => $request->waktu_jam,
-                'tempat' => $request->tempat,
-                'tujuan_kegiatan' => $request->tujuan_kegiatan,
-                'sasaran_kegiatan' => $request->sasaran_kegiatan,
-                'ruang_lingkup' => $request->ruang_lingkup,
-                'metode_kegiatan' => $request->metode_kegiatan,
-                'tahapan_kegiatan' => $request->tahapan_kegiatan,
-                'peserta_deskripsi' => $request->peserta_deskripsi,
-                'jadwal_kegiatan' => $request->jadwal_kegiatan,
-                'indikator_keberhasilan' => $request->indikator_keberhasilan,
-                'hambatan' => $request->hambatan,
-                'upaya_mengatasi' => $request->upaya_mengatasi,
-                'penutup' => $request->penutup,
-                // Fallback compatibility
-                'pendahuluan' => $request->tujuan_kegiatan,
-                'waktu_tempat' => trim(($request->waktu_hari_tanggal ?? '') . ' ' . ($request->waktu_jam ?? '') . ' di ' . ($request->tempat ?? '')),
-                'hasil_kegiatan' => $request->indikator_keberhasilan,
-                'saran' => $request->upaya_mengatasi,
-                'is_draft' => ! $isPrint,
-            ]),
+            'content' => json_encode($contentData),
             'metadata' => [
+                'jenis_lpj' => $jenisLpj,
                 'proposal_id' => $request->proposal_id,
+                'pengajuan_id' => $request->pengajuan_id,
                 'tahun_akademik' => $request->tahun_akademik ?? '2024-2025',
                 'realisasi_dana' => $totalPengeluaran,
                 'total_pemasukan' => $totalPemasukan,
                 'total_sisa' => $totalSisa,
                 'keuangan_items' => $keuanganItems,
                 'daftar_hadir_items' => $daftarHadirItems,
+                'barang_items' => $barangItems,
+                'delegasi_items' => $delegasiItems,
                 'foto_dokumentasi' => $dokumentasiPaths,
                 'bukti_struk' => $strukPaths,
                 'file_lampiran_pdf' => $lampiranPdfPath,
@@ -758,8 +864,9 @@ class ProposalGeneratorController extends Controller
         }
         
         $proposal = \App\Models\ProposalOtomatis::find($lpj->metadata['proposal_id'] ?? $lpj->proposal_otomatis_id ?? null);
+        $pengajuan = \App\Models\Pengajuan::find($lpj->metadata['pengajuan_id'] ?? null);
         $konfig = \App\Models\Konfigurasi::pluck('nilai_konfigurasi', 'nama_konfigurasi');
-        return view('generator.lpj.show', compact('lpj', 'proposal', 'konfig'));
+        return view('generator.lpj.show', compact('lpj', 'proposal', 'pengajuan', 'konfig'));
     }
 
     public function print(ProposalOtomatis $proposal)
@@ -837,14 +944,16 @@ class ProposalGeneratorController extends Controller
         }
 
         $proposal = \App\Models\ProposalOtomatis::find($lpj->metadata['proposal_id'] ?? $lpj->proposal_otomatis_id ?? null);
+        $pengajuan = \App\Models\Pengajuan::find($lpj->metadata['pengajuan_id'] ?? null);
         $konfig = \App\Models\Konfigurasi::pluck('nilai_konfigurasi', 'nama_konfigurasi');
 
         $pdf = Pdf::loadView('generator.lpj.pdf', [
-            'lpj'      => $lpj,
-            'proposal' => $proposal,
-            'konfig'   => $konfig,
-            'isPdf'    => true,
-            'pdf'      => true,
+            'lpj'       => $lpj,
+            'proposal'  => $proposal,
+            'pengajuan' => $pengajuan,
+            'konfig'    => $konfig,
+            'isPdf'     => true,
+            'pdf'       => true,
         ])->setPaper('a4');
 
         $fileName = 'lpj-' . $lpj->id . '.pdf';

@@ -12,6 +12,11 @@ class PrestasiController extends Controller
     public function index()
     {
         $user = Auth::user();
+
+        if ($user->isHima()) {
+            return redirect()->route('dashboard')->with('error', 'Fitur pelaporan prestasi tidak tersedia untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        }
+
         $role = $user->roles->first()?->name;
 
         // Verifikator (BKHM/WR3/admin) & BPM melihat semua; lain hanya milik sendiri.
@@ -26,11 +31,19 @@ class PrestasiController extends Controller
 
     public function create()
     {
+        if (Auth::user()->isHima()) {
+            return redirect()->route('dashboard')->with('error', 'Fitur pelaporan prestasi tidak tersedia untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        }
+
         return view('prestasi.create');
     }
 
     public function store(Request $request)
     {
+        if (Auth::user()->isHima()) {
+            return redirect()->route('dashboard')->with('error', 'Fitur pelaporan prestasi tidak tersedia untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        }
+
         $validated = $request->validate([
             'nama_kegiatan' => 'required|string|max:255',
             'penyelenggara' => 'nullable|string|max:255',

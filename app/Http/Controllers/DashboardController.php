@@ -76,17 +76,19 @@ class DashboardController extends Controller
                 'verifikasi_tempat' => PeminjamanTempat::where('status_bkhm','pending')->count(),
                 'verifikasi_barang' => PeminjamanBarang::where('status_bkhm','pending')->count(),
                 'kurasi_berita' => \App\Models\Pengumuman::pendingKurasi()->count(),
+                'tiket_prestasi' => \App\Models\TiketLayanan::where('kategori', 'prestasi')->where('status', 'pending')->count(),
             ];
             $rapats = \App\Models\JadwalRapat::with('penyelenggara')->latest()->take(10)->get();
             $proposalQueue = Pengajuan::with(['user','state'])->whereHas('state', fn($q)=>$q->where('name',WorkflowState::BPM_APPROVED))->latest()->take(10)->get();
             $lpjQueue = Pengajuan::with(['user','state','dana'])->whereHas('state', fn($q)=>$q->where('name', WorkflowState::LPJ_SUBMITTED))->latest()->take(10)->get();
+            $prestasiQueue = \App\Models\TiketLayanan::where('kategori', 'prestasi')->whereIn('status', ['pending', 'diverifikasi_bkhm'])->latest()->take(10)->get();
             $tempatQueue = PeminjamanTempat::with(['user','ruangan'])->where('status_bkhm','pending')->latest()->take(10)->get();
             $barangQueue = PeminjamanBarang::with('user')->where('status_bkhm','pending')->latest()->take(10)->get();
             // kalender terpadu
             $calendarTempat = PeminjamanTempat::with('ruangan')->whereIn('status_akhir',['Selesai / Disetujui','Proses Sarpras'])->get();
             $calendarBarang = PeminjamanBarang::whereIn('status_akhir',['Sedang Digunakan','Proses Sarpras'])->get();
             $saldoHistori = SaldoHistori::with(['user', 'actor'])->latest()->take(20)->get();
-            return view('dashboard.bkhm', compact('counts','rapats','proposalQueue','lpjQueue','tempatQueue','barangQueue','calendarTempat','calendarBarang','saldoHistori'));
+            return view('dashboard.bkhm', compact('counts','rapats','proposalQueue','lpjQueue','prestasiQueue','tempatQueue','barangQueue','calendarTempat','calendarBarang','saldoHistori'));
         }
         elseif ($role === 'bem') {
             $saldoAwal = $user->saldo_awal ?? $user->saldo;
@@ -111,7 +113,41 @@ class DashboardController extends Controller
             $proposalQueue = Pengajuan::with(['user','state'])->whereHas('state', fn($q)=>$q->where('name',WorkflowState::BEM_APPROVED))->latest()->take(10)->get();
             $calendarTempat = PeminjamanTempat::with('ruangan')->whereIn('status_akhir',['Selesai / Disetujui','Proses Sarpras'])->get();
             $calendarBarang = PeminjamanBarang::whereIn('status_akhir',['Sedang Digunakan','Proses Sarpras'])->get();
-            return view('dashboard.bpm', compact('saldoAwal','terpakai','rapats','counts','proposalQueue','calendarTempat','calendarBarang'));
+
+            // Monitoring Anggaran Seluruh Organisasi Mahasiswa ITG untuk BPM
+            $allOrmawaUsers = User::whereHas('roles', fn($q) => $q->whereIn('name', ['ormawa', 'bem', 'bpm']))->get();
+            $totalPaguAll = $allOrmawaUsers->sum(fn($u) => (float)($u->saldo_awal ?? 0));
+            $totalSisaAll = $allOrmawaUsers->sum(fn($u) => (float)($u->saldo ?? 0));
+            $totalTerpakaiAll = max(0, $totalPaguAll - $totalSisaAll);
+            $persenSerapanAll = $totalPaguAll > 0 ? round(($totalTerpakaiAll / $totalPaguAll) * 100, 1) : 0;
+
+            $allOrmawaWithSaldo = $allOrmawaUsers->map(function($u) {
+                $pagu = (float)($u->saldo_awal ?? 0);
+                $sisa = (float)($u->saldo ?? 0);
+                $used = max(0, $pagu - $sisa);
+                $pct = $pagu > 0 ? round(($used / $pagu) * 100, 1) : 0;
+                $tipe = 'Ormawa';
+                if ($u->hasRole('bem')) $tipe = 'BEM';
+                elseif ($u->hasRole('bpm')) $tipe = 'BPM';
+                elseif ($u->jenis_ormawa === 'hima' || !empty($u->prodi)) $tipe = 'HIMA';
+                elseif ($u->jenis_ormawa === 'ukm') $tipe = 'UKM';
+
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'tipe' => $tipe,
+                    'saldo_awal' => $pagu,
+                    'terpakai' => $used,
+                    'saldo' => $sisa,
+                    'persen' => $pct,
+                ];
+            });
+
+            return view('dashboard.bpm', compact(
+                'saldoAwal','terpakai','rapats','counts','proposalQueue',
+                'calendarTempat','calendarBarang','allOrmawaWithSaldo',
+                'totalPaguAll','totalTerpakaiAll','totalSisaAll','persenSerapanAll'
+            ));
         }
         elseif ($role === 'wr3') {
             $usersWithSaldo = User::whereNotNull('saldo_awal')
@@ -186,22 +222,6 @@ class DashboardController extends Controller
                 ->get();
 
             return view('dashboard.sarpras', compact('stats', 'antrianTempat', 'antrianBarang'));
-        }
-        
-        elseif ($role === 'prodi') {
-            $userProdi = $user->prodi;
-            $antrianQuery = Pengajuan::whereHas('state', fn($q) => $q->where('name', WorkflowState::PRODI_REVIEW));
-            $disetujuiQuery = Pengajuan::whereNotNull('verified_prodi_at');
-            if ($userProdi) {
-                $antrianQuery->whereHas('user', fn($q) => $q->where('prodi', $userProdi));
-                $disetujuiQuery->whereHas('user', fn($q) => $q->where('prodi', $userProdi));
-            }
-
-            $stats = [
-                'antrian_verifikasi' => $antrianQuery->count(),
-                'total_disetujui' => $disetujuiQuery->whereMonth('verified_prodi_at', date('m'))->count(),
-            ];
-            return view('dashboard.verifikator', compact('stats'));
         }
 
         elseif ($role === 'satgas_ppks') {

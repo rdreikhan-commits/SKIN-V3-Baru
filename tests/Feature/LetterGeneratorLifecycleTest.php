@@ -24,6 +24,8 @@ class LetterGeneratorLifecycleTest extends TestCase
     private function buatUserOrmawa(array $overrides = []): User
     {
         $user = User::factory()->create(array_merge([
+            'name'            => 'UKM Seni ITG Test',
+            'jenis_ormawa'    => 'ukm',
             'nama_ketua'      => 'Budi Setiawan',
             'nim_ketua'       => '2106001',
             'nama_sekretaris' => 'Siti Rahayu',
@@ -155,9 +157,11 @@ class LetterGeneratorLifecycleTest extends TestCase
             'tempat'          => 'Ruang Sidang Rektorat ITG',
         ]);
 
-        $this->actingAs($user)->post(route('generator.letters.store'), $payload);
+        $res = $this->actingAs($user)->post(route('generator.letters.store'), $payload);
+        $res->assertSessionHasNoErrors();
 
-        $letter = Letter::first();
+        $letter = Letter::where('type', 'undangan')->latest('id')->first();
+        $this->assertNotNull($letter);
         $sig    = $letter->tandaTanganUtama();
 
         $this->assertNotNull($sig);
@@ -405,15 +409,13 @@ class LetterGeneratorLifecycleTest extends TestCase
             ->orderBy('signer_index')
             ->get();
 
-        $this->assertCount(2, $signatures);
+        // Sesuai Security Guard: Hanya mahasiswa ber-NIM yang dibubuhkan QR TTD otomatis (1 signature)
+        // Pejabat/Dosen Pembina diblokir dari TTD digital otomatis untuk mencegah pemalsuan
+        $this->assertCount(1, $signatures);
 
         // Signer 0 adalah Ketua Ormawa (Mahasiswa) -> NIM
         $this->assertEquals('NIM', $signatures[0]->identitas_label);
         $this->assertEquals('NIM. 2106001', $signatures[0]->identitas_formatted);
-
-        // Signer 1 adalah Dosen Pembina -> NIDN
-        $this->assertEquals('NIDN', $signatures[1]->identitas_label);
-        $this->assertEquals('NIDN. 0421099301', $signatures[1]->identitas_formatted);
 
         // Periksa tampilan halaman Show
         $viewRes = $this->actingAs($user)->get(route('generator.letters.show', $letter));

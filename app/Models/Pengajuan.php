@@ -28,6 +28,7 @@ class Pengajuan extends Model
         'unique_code',
         'notif_cair_terlihat',
         'evaluasi_termin_ok',
+        'perlu_satgas_ppks',
         'terakhir_diingatkan_at',
         'jumlah_nudge',
         'tanggal_mulai_kegiatan',
@@ -44,6 +45,7 @@ class Pengajuan extends Model
 
     protected $casts = [
         'evaluasi_termin_ok' => 'boolean',
+        'perlu_satgas_ppks' => 'boolean',
         'terakhir_diingatkan_at' => 'datetime',
         'jumlah_nudge' => 'integer',
         'tanggal_mulai_kegiatan' => 'date',
@@ -313,12 +315,17 @@ class Pengajuan extends Model
 
     /**
      * Cek apakah pengajuan ini mem-bypass verifikasi Satgas PPKS.
-     * Pengadaan barang dan pendanaan lomba adalah permohonan dana non-kegiatan fisik,
-     * sehingga verifikasi diteruskan langsung dari BPM ke BKHM.
+     * 1. Pengadaan barang dan pendanaan lomba selalu mem-bypass Satgas PPKS (dana non-kegiatan fisik).
+     * 2. Untuk kegiatan mahasiswa, jika opsi 'perlu_satgas_ppks' tidak dicentang (false),
+     *    maka pengajuan juga mem-bypass Satgas PPKS dan diteruskan langsung dari BPM ke BKHM.
      */
     public function isBypassPpks(): bool
     {
-        return in_array($this->jenis_pengajuan, ['pengadaan_barang', 'pendanaan_lomba']);
+        if (in_array($this->jenis_pengajuan, ['pengadaan_barang', 'pendanaan_lomba'])) {
+            return true;
+        }
+
+        return ! (bool) $this->perlu_satgas_ppks;
     }
 
     public function getJenisPengajuanLabelAttribute(): string
@@ -346,10 +353,10 @@ class Pengajuan extends Model
                 'icon' => '🏆',
             ],
             default => [
-                'label' => 'Kegiatan Mahasiswa',
+                'label' => $this->perlu_satgas_ppks ? 'Kegiatan (Verifikasi Satgas PPKS)' : 'Kegiatan (Bypass Satgas PPKS)',
                 'short_label' => 'Kegiatan',
-                'class' => 'bg-blue-50 text-blue-800 border-blue-200 font-semibold',
-                'icon' => '🎪',
+                'class' => $this->perlu_satgas_ppks ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' : 'bg-blue-50 text-blue-800 border-blue-200 font-semibold',
+                'icon' => $this->perlu_satgas_ppks ? '🛡️' : '🎪',
             ],
         };
     }

@@ -13,9 +13,19 @@ use Illuminate\Support\Facades\Auth;
 
 class PeminjamanController extends Controller
 {
+    protected function checkHimaAccess()
+    {
+        if (Auth::user() && Auth::user()->isHima()) {
+            return redirect()->route('dashboard')->with('error', 'Fitur peminjaman fasilitas tidak tersedia untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        }
+        return null;
+    }
+
     // Opsi A: Riwayat terpisah - Tempat (hanya milik sendiri)
     public function historyTempat()
     {
+        if ($res = $this->checkHimaAccess()) return $res;
+
         $peminjaman_tempat = (Auth::user()->hasRole('admin') ? PeminjamanTempat::query() : PeminjamanTempat::where('user_id', Auth::id()))
             ->with(['ruangan', 'suratPermohonan'])
             ->latest()
@@ -26,6 +36,8 @@ class PeminjamanController extends Controller
     // Opsi A: Riwayat terpisah - Barang (hanya milik sendiri)
     public function historyBarang()
     {
+        if ($res = $this->checkHimaAccess()) return $res;
+
         $peminjaman_barang = (Auth::user()->hasRole('admin') ? PeminjamanBarang::query() : PeminjamanBarang::where('user_id', Auth::id()))
             ->with('suratPermohonan')
             ->latest()
@@ -36,6 +48,8 @@ class PeminjamanController extends Controller
     // Menampilkan daftar peminjaman untuk Ormawa (gabungan - legacy, redirect ke tempat)
     public function index()
     {
+        if ($res = $this->checkHimaAccess()) return $res;
+
         $peminjaman_tempat = (Auth::user()->hasRole('admin') ? PeminjamanTempat::query() : PeminjamanTempat::where('user_id', Auth::id()))
             ->with('ruangan')
             ->latest()
@@ -51,6 +65,8 @@ class PeminjamanController extends Controller
     // Form pinjam ruangan
     public function createTempat()
     {
+        if ($res = $this->checkHimaAccess()) return $res;
+
         $ruangans = MasterRuangan::where('status_aktif', true)->get();
 
         // FR-018 / UI-013: kalender ketersediaan ruangan (gabungan peminjaman aktif + jadwal perkuliahan)
@@ -91,6 +107,8 @@ class PeminjamanController extends Controller
      */
     public function jadwalRuangan(Request $request)
     {
+        if ($res = $this->checkHimaAccess()) return $res;
+
         $ruanganId = $request->query('ruangan_id');
         $tanggal = $request->query('tanggal', now()->toDateString());
 
@@ -138,6 +156,8 @@ class PeminjamanController extends Controller
     // Store pinjam ruangan
     public function storeTempat(Request $request)
     {
+        if ($res = $this->checkHimaAccess()) return $res;
+
         $rules = [
             'ruangan_id' => 'required|exists:master_ruangan,id',
             'nama_kegiatan' => 'required|string|max:255',
@@ -249,6 +269,8 @@ class PeminjamanController extends Controller
     // Form pinjam barang
     public function createBarang()
     {
+        if ($res = $this->checkHimaAccess()) return $res;
+
         $barangs = MasterBarang::where('status_aktif', true)->where('stok_tersedia', '>', 0)->get();
         return view('peminjaman.create_barang', compact('barangs'));
     }
@@ -256,6 +278,8 @@ class PeminjamanController extends Controller
     // Store pinjam barang
     public function storeBarang(Request $request)
     {
+        if ($res = $this->checkHimaAccess()) return $res;
+
         $rules = [
             'nama_kegiatan' => 'required|string|max:255',
             'tgl_mulai' => 'required|date|after_or_equal:today',

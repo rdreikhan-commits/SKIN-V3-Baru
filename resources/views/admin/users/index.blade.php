@@ -83,13 +83,12 @@
                                     'wr3', 'bkhm', 'bendahara', 'sarpras' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
                                     'bem', 'bpm' => 'bg-amber-50 text-amber-700 border-amber-200',
                                     'ormawa' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                                    'prodi' => 'bg-cyan-50 text-cyan-700 border-cyan-200',
                                     'satgas_ppks' => 'bg-purple-50 text-purple-700 border-purple-200',
                                     default => 'bg-slate-100 text-slate-600 border-slate-200'
                                 };
                             @endphp
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase border {{ $roleClass }}">
-                                {{ $roleName === 'satgas_ppks' ? 'SATGAS PPKS' : ($roleName === 'prodi' ? 'PRODI' : $roleName) }}
+                                {{ $roleName === 'satgas_ppks' ? 'SATGAS PPKS' : $roleName }}
                             </span>
                             @if($user->kode_prodi)
                                 <div class="text-[10px] text-cyan-800 font-mono mt-0.5 font-bold">[{{ $user->kode_prodi }}]</div>
@@ -178,37 +177,12 @@
                                                 'sarpras' => 'SARANA & PRASARANA (SARPRAS)',
                                                 'bkhm' => 'BKHM',
                                                 'admin' => 'ADMINISTRATOR SISTEM',
-                                                'prodi' => 'PRODI (PROGRAM STUDI / PEMBINA HIMPUNAN)',
                                                 'satgas_ppks' => 'SATGAS PPKS (PENGAWAS & VERIFIKATOR PPKS)',
                                                 default => strtoupper($role->name)
                                             } }}
                                         </option>
                                     @endforeach
                                 </select>
-                            </div>
-
-                            <!-- Bidang Khusus Program Studi (Prodi) pada Tambah -->
-                            <div x-show="selectedRole === 'prodi'" x-transition class="space-y-3 pt-2 border-t border-slate-200">
-                                <div class="p-3 bg-cyan-50 border border-cyan-200 rounded-xl text-xs text-cyan-900 leading-relaxed flex items-start gap-2">
-                                    <svg class="w-4 h-4 text-cyan-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <span><strong>Pembina Himpunan:</strong> Akun Program Studi akan menjadi verifikator tahap pertama bagi proposal kegiatan dan memonitor program kerja himpunan mahasiswa di bawah prodi terkait.</span>
-                                </div>
-                                <div>
-                                    <x-input-label for="add_prodi_select" value="Pilih Program Studi" />
-                                    <select id="add_prodi_select" name="prodi" class="border-gray-300 focus:border-cyan-500 focus:ring-cyan-500 rounded-md shadow-sm block mt-1 w-full text-xs" 
-                                            @change="$refs.addKodeProdi.value = $event.target.selectedOptions[0].getAttribute('data-kode') || ''">
-                                        <option value="">-- Pilih Program Studi --</option>
-                                        <option value="Teknik Informatika" data-kode="IF">S1 Teknik Informatika (IF)</option>
-                                        <option value="Sistem Informasi" data-kode="SI">S1 Sistem Informasi (SI)</option>
-                                        <option value="Teknik Sipil" data-kode="TS">S1 Teknik Sipil (TS)</option>
-                                        <option value="Teknik Industri" data-kode="TI">S1 Teknik Industri (TI)</option>
-                                        <option value="Arsitektur" data-kode="AR">S1 Arsitektur (AR)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <x-input-label for="add_kode_prodi" value="Kode Prodi (IF / SI / TS / TI / AR)" />
-                                    <x-text-input id="add_kode_prodi" name="kode_prodi" type="text" x-ref="addKodeProdi" class="mt-1 block w-full text-xs font-mono uppercase" placeholder="Cth: IF" />
-                                </div>
                             </div>
 
                             <!-- Bidang Khusus Satgas PPKS pada Tambah -->
@@ -324,33 +298,12 @@
                                                 'sarpras' => 'SARANA & PRASARANA (SARPRAS)',
                                                 'bkhm' => 'BKHM',
                                                 'admin' => 'ADMINISTRATOR SISTEM',
-                                                'prodi' => 'PRODI (PROGRAM STUDI / PEMBINA HIMPUNAN)',
                                                 'satgas_ppks' => 'SATGAS PPKS (PENGAWAS & VERIFIKATOR PPKS)',
                                                 default => strtoupper($role->name)
                                             } }}
                                         </option>
                                     @endforeach
                                 </select>
-                            </div>
-
-                            <!-- Bidang Khusus Program Studi (Prodi) pada Edit -->
-                            <div x-show="editUser?.role === 'prodi'" x-transition class="space-y-3 pt-2 border-t border-slate-200">
-                                <div>
-                                    <x-input-label for="edit_prodi" value="Program Studi" />
-                                    <select id="edit_prodi" name="prodi" class="border-gray-300 focus:border-cyan-500 focus:ring-cyan-500 rounded-md shadow-sm block mt-1 w-full text-xs" x-model="editUser.prodi"
-                                            @change="editUser.kode_prodi = $event.target.selectedOptions[0].getAttribute('data-kode') || editUser.kode_prodi">
-                                        <option value="">-- Pilih Program Studi --</option>
-                                        <option value="Teknik Informatika" data-kode="IF">S1 Teknik Informatika (IF)</option>
-                                        <option value="Sistem Informasi" data-kode="SI">S1 Sistem Informasi (SI)</option>
-                                        <option value="Teknik Sipil" data-kode="TS">S1 Teknik Sipil (TS)</option>
-                                        <option value="Teknik Industri" data-kode="TI">S1 Teknik Industri (TI)</option>
-                                        <option value="Arsitektur" data-kode="AR">S1 Arsitektur (AR)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <x-input-label for="edit_kode_prodi" value="Kode Prodi (IF / SI / TS / TI / AR)" />
-                                    <x-text-input id="edit_kode_prodi" name="kode_prodi" type="text" class="mt-1 block w-full text-xs font-mono uppercase" x-model="editUser.kode_prodi" placeholder="Cth: IF" />
-                                </div>
                             </div>
 
                             <!-- Bidang Khusus Ormawa (HIMA vs UKM) pada Edit -->

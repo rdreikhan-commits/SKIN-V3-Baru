@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Buat Pengajuan Baru') }}
+            {{ Auth::user()->isHima() ? __('Buat Pengajuan Dana Non-Akademik') : __('Buat Pengajuan Baru') }}
         </h2>
     </x-slot>
 
@@ -97,7 +97,8 @@
                         <form method="POST" action="{{ route('pengajuan.store') }}" enctype="multipart/form-data" 
                               x-data="{ 
                                 submitting: false, 
-                                jenisPengajuan: '{{ old('jenis_pengajuan', isset($fromProposal) && $fromProposal ? ($fromProposal->jenis_proposal ?? 'kegiatan') : 'kegiatan') }}' 
+                                jenisPengajuan: '{{ old('jenis_pengajuan', isset($fromProposal) && $fromProposal ? ($fromProposal->jenis_proposal ?? 'kegiatan') : 'kegiatan') }}',
+                                perluSatgasPpks: {{ old('perlu_satgas_ppks') ? 'true' : 'false' }}
                               }" 
                               @submit="submitting = true">
                             @csrf
@@ -157,26 +158,18 @@
                                     <x-input-error :messages="$errors->get('nama_kegiatan')" class="mt-2" />
                                 </div>
 
+                                @if(Auth::user()->isHima())
+                                <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
+                                    ℹ️ <strong>Pengajuan Dana Non-Akademik Himpunan:</strong> Pengajuan dana kegiatan non-akademik ini diteruskan langsung ke BEM & Kemahasiswaan kampus ITG tanpa persetujuan prodi.
+                                </div>
+                                @else
                                 <div class="mb-4">
                                     <x-input-label for="program_kerja_id" :value="__('Program Kerja Terkait (Opsional)')" />
                                     <select id="program_kerja_id" name="program_kerja_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" @if(isset($blocking) && $blocking) disabled @endif>
                                         <option value="">-- Tidak Terkait / Di Luar Program Kerja Tahunan --</option>
                                         @foreach($prokers ?? [] as $proker)
-                                            @php
-                                                $isHima = $proker->isHimaProker();
-                                                $statusBadge = '';
-                                                if ($isHima) {
-                                                    if ($proker->status_prodi === 'disetujui') {
-                                                        $statusBadge = '✓ [ACC Prodi]';
-                                                    } elseif ($proker->status_prodi === 'menunggu') {
-                                                        $statusBadge = '⏳ [Menunggu ACC Prodi]';
-                                                    } elseif ($proker->status_prodi === 'ditolak') {
-                                                        $statusBadge = '❌ [Revisi/Ditolak Prodi]';
-                                                    }
-                                                }
-                                            @endphp
                                             <option value="{{ $proker->id }}" {{ old('program_kerja_id') == $proker->id ? 'selected' : '' }}>
-                                                {{ $proker->nama_proker }} (Rencana: {{ \Carbon\Carbon::parse($proker->rencana_pelaksanaan)->format('d/m/Y') }}) {{ $statusBadge }}
+                                                {{ $proker->nama_proker }} (Rencana: {{ \Carbon\Carbon::parse($proker->rencana_pelaksanaan)->format('d/m/Y') }})
                                             </option>
                                         @endforeach
                                     </select>
@@ -187,6 +180,7 @@
                                     @endif
                                     <x-input-error :messages="$errors->get('program_kerja_id')" class="mt-2" />
                                 </div>
+                                @endif
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                     <div>
@@ -236,38 +230,73 @@
                                 </div>
 
                                 <!-- Bagian Pengawasan & Kepatuhan Satgas PPKS (Khusus Kegiatan Mahasiswa) -->
-                                <div x-show="jenisPengajuan === 'kegiatan'" x-transition class="p-4 bg-rose-50/50 border border-rose-200 rounded-xl space-y-4">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-rose-600 text-lg">🛡️</span>
-                                        <div>
-                                            <h4 class="font-bold text-sm text-slate-800">Instrumen Pengawasan &amp; Mitigasi Satgas PPKS</h4>
-                                            <p class="text-xs text-slate-500">Kepatuhan mitigasi pencegahan kekerasan seksual &amp; perundungan (Permendikbudristek No. 30/2021).</p>
-                                        </div>
+                                <div x-show="jenisPengajuan === 'kegiatan'" x-transition class="space-y-4">
+                                    <!-- Opsi Checkbox Izin Satgas PPKS -->
+                                    <div class="p-4 bg-white border-2 rounded-xl transition cursor-pointer select-none"
+                                         :class="perluSatgasPpks ? 'border-rose-500 bg-rose-50/40 shadow-xs' : 'border-slate-200 bg-slate-50/50'">
+                                        <label class="flex items-start gap-3 cursor-pointer">
+                                            <input type="checkbox" 
+                                                   name="perlu_satgas_ppks" 
+                                                   value="1" 
+                                                   x-model="perluSatgasPpks"
+                                                   class="mt-1 w-5 h-5 text-rose-600 rounded border-gray-300 focus:ring-rose-500 transition"
+                                                   @if(isset($blocking) && $blocking) disabled @endif>
+                                            <div class="space-y-1">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-base">🛡️</span>
+                                                    <span class="text-sm font-bold text-slate-900">
+                                                        Kegiatan Memerlukan Rekomendasi &amp; Izin Satgas PPKS ITG
+                                                    </span>
+                                                </div>
+                                                <p class="text-xs text-slate-500 leading-relaxed">
+                                                    Beri tanda centang jika kegiatan melibatkan aktivitas fisik khusus, kegiatan di luar kampus, malam hari, perkemahan, atau malam keakraban.
+                                                </p>
+                                                <div class="pt-1 text-[11px] font-semibold">
+                                                    <span class="text-rose-700" x-show="perluSatgasPpks">
+                                                        &checkmark; Terpilih: Proposal akan diverifikasi Satgas PPKS setelah disetujui BPM sebelum diteruskan ke BKHM.
+                                                    </span>
+                                                    <span class="text-slate-600" x-show="!perluSatgasPpks">
+                                                        &bull; Tidak dicentang: Kegiatan umum/internal diteruskan langsung dari BPM ke BKHM (Bypass Satgas PPKS).
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </label>
                                     </div>
 
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <x-input-label for="kategori_kegiatan" :value="__('Kategori Lingkup Kegiatan')" />
-                                            <select id="kategori_kegiatan" name="kategori_kegiatan" class="block mt-1 w-full border-gray-300 focus:border-rose-500 focus:ring-rose-500 rounded-md shadow-sm text-sm" @if(isset($blocking) && $blocking) disabled @endif>
-                                                <option value="dalam_kampus" {{ old('kategori_kegiatan') === 'dalam_kampus' ? 'selected' : '' }}>Di Lingkungan Kampus ITG</option>
-                                                <option value="luar_kampus" {{ old('kategori_kegiatan') === 'luar_kampus' ? 'selected' : '' }}>Luar Kampus (Studi Tur / Makrab / Baksos)</option>
-                                                <option value="menginap" {{ old('kategori_kegiatan') === 'menginap' ? 'selected' : '' }}>Kegiatan Menginap / Berkemah (Camp)</option>
-                                            </select>
-                                            <x-input-error :messages="$errors->get('kategori_kegiatan')" class="mt-2" />
+                                    <!-- Instrumen Pengawasan PPKS Detail (Hanya Tampil Jika Opsi Dicentang) -->
+                                    <div x-show="perluSatgasPpks" x-transition class="p-4 bg-rose-50/70 border border-rose-200 rounded-xl space-y-4">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-rose-600 text-lg">📋</span>
+                                            <div>
+                                                <h4 class="font-bold text-sm text-slate-800">Instrumen Mitigasi &amp; Narahubung Satgas PPKS</h4>
+                                                <p class="text-xs text-slate-500">Kelengkapan dokumen pencegahan kekerasan seksual &amp; perundungan (Permendikbudristek No. 30/2021).</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <x-input-label for="kategori_kegiatan" :value="__('Kategori Lingkup Kegiatan')" />
+                                                <select id="kategori_kegiatan" name="kategori_kegiatan" class="block mt-1 w-full border-gray-300 focus:border-rose-500 focus:ring-rose-500 rounded-md shadow-sm text-sm" @if(isset($blocking) && $blocking) disabled @endif>
+                                                    <option value="dalam_kampus" {{ old('kategori_kegiatan') === 'dalam_kampus' ? 'selected' : '' }}>Di Lingkungan Kampus ITG</option>
+                                                    <option value="luar_kampus" {{ old('kategori_kegiatan') === 'luar_kampus' ? 'selected' : '' }}>Luar Kampus (Studi Tur / Makrab / Baksos)</option>
+                                                    <option value="menginap" {{ old('kategori_kegiatan') === 'menginap' ? 'selected' : '' }}>Kegiatan Menginap / Berkemah (Camp)</option>
+                                                </select>
+                                                <x-input-error :messages="$errors->get('kategori_kegiatan')" class="mt-2" />
+                                            </div>
+
+                                            <div>
+                                                <x-input-label for="kontak_pic_ppks" :value="__('Narahubung Darurat Panitia (WhatsApp 24 Jam)')" />
+                                                <x-text-input id="kontak_pic_ppks" class="block mt-1 w-full text-sm" type="text" name="kontak_pic_ppks" :value="old('kontak_pic_ppks')" placeholder="Cth: Ahmad (081234567890)" :disabled="isset($blocking) && $blocking" />
+                                                <x-input-error :messages="$errors->get('kontak_pic_ppks')" class="mt-2" />
+                                            </div>
                                         </div>
 
                                         <div>
-                                            <x-input-label for="kontak_pic_ppks" :value="__('Narahubung Darurat Panitia (WhatsApp 24 Jam)')" />
-                                            <x-text-input id="kontak_pic_ppks" class="block mt-1 w-full text-sm" type="text" name="kontak_pic_ppks" :value="old('kontak_pic_ppks')" placeholder="Cth: Ahmad (081234567890)" :disabled="isset($blocking) && $blocking" />
-                                            <x-input-error :messages="$errors->get('kontak_pic_ppks')" class="mt-2" />
+                                            <x-input-label for="file_pakta_ppks" :value="__('Pakta Integritas / Surat Komitmen Anti-Kekerasan Seksual (Opsional, PDF maks 5MB)')" />
+                                            <input id="file_pakta_ppks" class="block mt-1 w-full border border-gray-300 rounded p-2 text-sm bg-white" type="file" name="file_pakta_ppks" accept=".pdf" @if(isset($blocking) && $blocking) disabled @endif />
+                                            <p class="text-[11px] text-slate-500 mt-1">Unggah surat pernyataan komitmen panitia bebas kekerasan seksual &amp; perundungan yang telah ditandatangani ketua panitia/ketua umum.</p>
+                                            <x-input-error :messages="$errors->get('file_pakta_ppks')" class="mt-2" />
                                         </div>
-                                    </div>
-
-                                    <div>
-                                        <x-input-label for="file_pakta_ppks" :value="__('Pakta Integritas / Surat Komitmen Anti-Kekerasan Seksual (Opsional, PDF maks 5MB)')" />
-                                        <input id="file_pakta_ppks" class="block mt-1 w-full border border-gray-300 rounded p-2 text-sm bg-white" type="file" name="file_pakta_ppks" accept=".pdf" @if(isset($blocking) && $blocking) disabled @endif />
-                                        <p class="text-[11px] text-slate-500 mt-1">Unggah surat pernyataan komitmen panitia bebas kekerasan seksual &amp; perundungan yang telah ditandatangani ketua panitia/ketua umum.</p>
-                                        <x-input-error :messages="$errors->get('file_pakta_ppks')" class="mt-2" />
                                     </div>
                                 </div>
 

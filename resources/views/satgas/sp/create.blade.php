@@ -67,7 +67,7 @@
                     <!-- Bagian A: Ormawa -->
                     <div x-show="tipe === 'ormawa'" class="space-y-3 bg-gray-50/70 p-4 rounded-xl border border-gray-200">
                         <label class="block text-xs font-bold uppercase tracking-wider text-gray-700">Pilih Organisasi Target <span class="text-red-500">*</span></label>
-                        <select name="target_user_id" class="w-full border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500">
+                        <select name="target_user_id" :required="tipe === 'ormawa'" :disabled="tipe !== 'ormawa'" class="w-full border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500">
                             <option value="">-- Pilih Organisasi Mahasiswa --</option>
                             @foreach($ormawas as $o)
                                 <option value="{{ $o->id }}" {{ old('target_user_id') == $o->id ? 'selected' : '' }}>
@@ -101,15 +101,15 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
                                         <label class="block text-[11px] font-semibold text-gray-700 mb-1">NIM Mahasiswa *</label>
-                                        <input type="text" :name="'target_mahasiswas[' + i + '][nim]'" x-model="m.nim" required class="w-full border-gray-300 rounded-lg text-xs font-mono" placeholder="2306001">
+                                        <input type="text" :name="'target_mahasiswas[' + i + '][nim]'" x-model="m.nim" :required="tipe === 'mahasiswa'" :disabled="tipe !== 'mahasiswa'" class="w-full border-gray-300 rounded-lg text-xs font-mono" placeholder="2306001">
                                     </div>
                                     <div>
                                         <label class="block text-[11px] font-semibold text-gray-700 mb-1">Nama Lengkap *</label>
-                                        <input type="text" :name="'target_mahasiswas[' + i + '][nama]'" x-model="m.nama" required class="w-full border-gray-300 rounded-lg text-xs" placeholder="Nama Mahasiswa">
+                                        <input type="text" :name="'target_mahasiswas[' + i + '][nama]'" x-model="m.nama" :required="tipe === 'mahasiswa'" :disabled="tipe !== 'mahasiswa'" class="w-full border-gray-300 rounded-lg text-xs" placeholder="Nama Mahasiswa">
                                     </div>
                                     <div>
                                         <label class="block text-[11px] font-semibold text-gray-700 mb-1">Program Studi *</label>
-                                        <select :name="'target_mahasiswas[' + i + '][prodi]'" x-model="m.prodi" required class="w-full border-gray-300 rounded-lg text-xs">
+                                        <select :name="'target_mahasiswas[' + i + '][prodi]'" x-model="m.prodi" :required="tipe === 'mahasiswa'" :disabled="tipe !== 'mahasiswa'" class="w-full border-gray-300 rounded-lg text-xs">
                                             <option value="">-- Pilih Prodi --</option>
                                             @foreach($prodis as $p)
                                                 <option value="{{ $p }}">{{ $p }}</option>
@@ -118,7 +118,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-[11px] font-semibold text-gray-700 mb-1">No. Kontak / WhatsApp (Opsional)</label>
-                                        <input type="text" :name="'target_mahasiswas[' + i + '][kontak]'" x-model="m.kontak" class="w-full border-gray-300 rounded-lg text-xs" placeholder="08xxxxxxxxxx">
+                                        <input type="text" :name="'target_mahasiswas[' + i + '][kontak]'" x-model="m.kontak" :disabled="tipe !== 'mahasiswa'" class="w-full border-gray-300 rounded-lg text-xs" placeholder="08xxxxxxxxxx">
                                     </div>
                                 </div>
                             </div>

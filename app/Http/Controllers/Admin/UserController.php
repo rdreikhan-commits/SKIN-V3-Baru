@@ -28,11 +28,11 @@ class UserController extends Controller
     {
         $currentUser = auth()->user();
         if ($currentUser && $currentUser->hasRole('admin')) {
-            return ['admin', 'bkhm', 'wr3', 'bendahara', 'sarpras', 'ormawa', 'bem', 'bpm', 'prodi', 'satgas_ppks'];
+            return ['admin', 'bkhm', 'wr3', 'bendahara', 'sarpras', 'ormawa', 'bem', 'bpm', 'satgas_ppks'];
         }
 
         // BKHM hanya mengelola role ormawa dan pejabat kemahasiswaan (tanpa admin, bkhm, dan mahasiswa)
-        return ['ormawa', 'bem', 'bpm', 'wr3', 'bendahara', 'sarpras', 'prodi', 'satgas_ppks'];
+        return ['ormawa', 'bem', 'bpm', 'wr3', 'bendahara', 'sarpras', 'satgas_ppks'];
     }
 
     public function index()
