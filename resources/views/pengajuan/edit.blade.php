@@ -85,7 +85,7 @@
                         </div>
 
                         <!-- Program Kerja Terkait -->
-                        @if(!Auth::user()->isHima())
+                        @if(!Auth::user()->isHima() || \App\Models\HimaFiturSetting::isAktif('proker'))
                         <div class="mb-4">
                             <x-input-label for="program_kerja_id" :value="__('Program Kerja Terkait (Opsional)')" />
                             <select id="program_kerja_id" name="program_kerja_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">

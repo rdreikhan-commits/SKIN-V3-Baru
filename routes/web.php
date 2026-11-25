@@ -136,52 +136,64 @@ Route::middleware('auth')->group(function () {
 
     // Ormawa, BEM, BPM: Modul Pengajuan, LPJ, Peminjaman, Generator
     Route::middleware(['role:ormawa|bem|bpm|admin', 'admin.readonly'])->group(function () {
-        Route::get('/pengajuan', [PengajuanController::class, 'index'])->name('pengajuan.index');
-        Route::get('/pengajuan/create', [PengajuanController::class, 'create'])->name('pengajuan.create');
-        Route::post('/pengajuan', [PengajuanController::class, 'store'])->name('pengajuan.store');
-        Route::get('/pengajuan/{pengajuan}', [PengajuanController::class, 'show'])->name('pengajuan.show');
-        Route::get('/pengajuan/{pengajuan}/edit', [PengajuanController::class, 'edit'])->name('pengajuan.edit');
-        Route::put('/pengajuan/{pengajuan}', [PengajuanController::class, 'update'])->name('pengajuan.update');
-        Route::delete('/pengajuan/{pengajuan}', [PengajuanController::class, 'destroy'])->name('pengajuan.destroy');
-        Route::post('/pengajuan/{pengajuan}/ajukan', [PengajuanController::class, 'ajukan'])->name('pengajuan.ajukan');
-        Route::post('/pengajuan/{pengajuan}/batalkan', [PengajuanController::class, 'batalkan'])->name('pengajuan.batalkan');
+        // Fitur: Pengajuan Proposal & Dana
+        Route::middleware(['hima.fitur:pengajuan'])->group(function () {
+            Route::get('/pengajuan', [PengajuanController::class, 'index'])->name('pengajuan.index');
+            Route::get('/pengajuan/create', [PengajuanController::class, 'create'])->name('pengajuan.create');
+            Route::post('/pengajuan', [PengajuanController::class, 'store'])->name('pengajuan.store');
+            Route::get('/pengajuan/{pengajuan}', [PengajuanController::class, 'show'])->name('pengajuan.show');
+            Route::get('/pengajuan/{pengajuan}/edit', [PengajuanController::class, 'edit'])->name('pengajuan.edit');
+            Route::put('/pengajuan/{pengajuan}', [PengajuanController::class, 'update'])->name('pengajuan.update');
+            Route::delete('/pengajuan/{pengajuan}', [PengajuanController::class, 'destroy'])->name('pengajuan.destroy');
+            Route::post('/pengajuan/{pengajuan}/ajukan', [PengajuanController::class, 'ajukan'])->name('pengajuan.ajukan');
+            Route::post('/pengajuan/{pengajuan}/batalkan', [PengajuanController::class, 'batalkan'])->name('pengajuan.batalkan');
+        });
         
-        // Form upload LPJ khusus pengaju (Ormawa, BEM, BPM)
-        Route::get('/lpj/create/{pengajuan}', [LpjController::class, 'create'])->name('lpj.create');
-        Route::post('/lpj/{pengajuan}', [LpjController::class, 'store'])->name('lpj.store');
+        // Fitur: Form upload LPJ khusus pengaju (Ormawa, BEM, BPM) & LPJ Generator
+        Route::middleware(['hima.fitur:lpj'])->group(function () {
+            Route::get('/lpj/create/{pengajuan}', [LpjController::class, 'create'])->name('lpj.create');
+            Route::post('/lpj/{pengajuan}', [LpjController::class, 'store'])->name('lpj.store');
 
-        Route::get('/peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
-        // Opsi A: Riwayat terpisah per jenis - hanya milik sendiri
-        Route::get('/peminjaman/tempat', [PeminjamanController::class, 'historyTempat'])->name('peminjaman.tempat.index');
-        Route::get('/peminjaman/barang', [PeminjamanController::class, 'historyBarang'])->name('peminjaman.barang.index');
-        Route::get('/peminjaman/tempat/create', [PeminjamanController::class, 'createTempat'])->name('peminjaman.tempat.create');
-        Route::get('/peminjaman/tempat/jadwal-ruangan', [PeminjamanController::class, 'jadwalRuangan'])->name('peminjaman.tempat.jadwal-ruangan');
-        Route::post('/peminjaman/tempat', [PeminjamanController::class, 'storeTempat'])->name('peminjaman.tempat.store');
-        Route::get('/peminjaman/barang/create', [PeminjamanController::class, 'createBarang'])->name('peminjaman.barang.create');
-        Route::post('/peminjaman/barang', [PeminjamanController::class, 'storeBarang'])->name('peminjaman.barang.store');
+            // LPJ Generator
+            Route::get('/generator/lpj/create/{proposal?}', [ProposalGeneratorController::class, 'createLpj'])->name('generator.lpj.create');
+            Route::post('/generator/lpj', [ProposalGeneratorController::class, 'storeLpj'])->name('generator.lpj.store');
+            Route::get('/generator/lpj/{lpj}', [ProposalGeneratorController::class, 'showLpj'])->name('generator.lpj.show');
+            Route::get('/generator/lpj/{lpj}/pdf', [ProposalGeneratorController::class, 'pdfLpj'])->name('generator.lpj.pdf');
+        });
 
-        // Proposal & Document Generator
-        Route::get('/generator', [ProposalGeneratorController::class, 'index'])->name('generator.index');
+        // Fitur: Peminjaman Tempat & Fasilitas / Sarpras
+        Route::middleware(['hima.fitur:sarpras'])->group(function () {
+            Route::get('/peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
+            Route::get('/peminjaman/tempat', [PeminjamanController::class, 'historyTempat'])->name('peminjaman.tempat.index');
+            Route::get('/peminjaman/barang', [PeminjamanController::class, 'historyBarang'])->name('peminjaman.barang.index');
+            Route::get('/peminjaman/tempat/create', [PeminjamanController::class, 'createTempat'])->name('peminjaman.tempat.create');
+            Route::get('/peminjaman/tempat/jadwal-ruangan', [PeminjamanController::class, 'jadwalRuangan'])->name('peminjaman.tempat.jadwal-ruangan');
+            Route::post('/peminjaman/tempat', [PeminjamanController::class, 'storeTempat'])->name('peminjaman.tempat.store');
+            Route::get('/peminjaman/barang/create', [PeminjamanController::class, 'createBarang'])->name('peminjaman.barang.create');
+            Route::post('/peminjaman/barang', [PeminjamanController::class, 'storeBarang'])->name('peminjaman.barang.store');
+        });
+
+        // Fitur: Proposal & Document Generator (Persuratan Digital)
         Route::get('/generator/create', [ProposalGeneratorController::class, 'create'])->name('generator.create');
         Route::post('/generator', [ProposalGeneratorController::class, 'store'])->name('generator.store');
-        Route::get('/generator/{proposal}', [ProposalGeneratorController::class, 'show'])->name('generator.show');
-        
-        // New Letter Generator
-        Route::get('/generator/letters/create', [ProposalGeneratorController::class, 'createLetter'])->name('generator.letters.create');
-        Route::post('/generator/letters', [ProposalGeneratorController::class, 'storeLetter'])->name('generator.letters.store');
-        Route::get('/generator/letters/{letter}', [ProposalGeneratorController::class, 'showLetter'])->name('generator.letters.show');
-        Route::get('/generator/letters/{letter}/pdf', [ProposalGeneratorController::class, 'pdfLetter'])->name('generator.letters.pdf');
 
-        // LPJ Generator
-        Route::get('/generator/lpj/create/{proposal?}', [ProposalGeneratorController::class, 'createLpj'])->name('generator.lpj.create');
-        Route::post('/generator/lpj', [ProposalGeneratorController::class, 'storeLpj'])->name('generator.lpj.store');
-        Route::get('/generator/lpj/{lpj}', [ProposalGeneratorController::class, 'showLpj'])->name('generator.lpj.show');
-        Route::get('/generator/lpj/{lpj}/pdf', [ProposalGeneratorController::class, 'pdfLpj'])->name('generator.lpj.pdf');
+        Route::middleware(['hima.fitur:persuratan'])->group(function () {
+            Route::get('/generator', [ProposalGeneratorController::class, 'index'])->name('generator.index');
+            Route::get('/generator/{proposal}', [ProposalGeneratorController::class, 'show'])->name('generator.show');
+            
+            // New Letter Generator
+            Route::get('/generator/letters/create', [ProposalGeneratorController::class, 'createLetter'])->name('generator.letters.create');
+            Route::post('/generator/letters', [ProposalGeneratorController::class, 'storeLetter'])->name('generator.letters.store');
+            Route::get('/generator/letters/{letter}', [ProposalGeneratorController::class, 'showLetter'])->name('generator.letters.show');
+            Route::get('/generator/letters/{letter}/pdf', [ProposalGeneratorController::class, 'pdfLetter'])->name('generator.letters.pdf');
+        });
 
-        // Surat Peringatan (Ormawa melihat SP milik sendiri)
-        Route::get('/sp/saya', [\App\Http\Controllers\SuratPeringatanController::class, 'index'])->name('sp.saya.index');
-        Route::get('/sp/saya/{sp}', [\App\Http\Controllers\SuratPeringatanController::class, 'show'])->name('sp.saya.show');
-        Route::get('/sp/saya/{sp}/pdf', [\App\Http\Controllers\SuratPeringatanController::class, 'pdf'])->name('sp.saya.pdf');
+        // Fitur: Surat Peringatan (Ormawa melihat SP milik sendiri)
+        Route::middleware(['hima.fitur:sp'])->group(function () {
+            Route::get('/sp/saya', [\App\Http\Controllers\SuratPeringatanController::class, 'index'])->name('sp.saya.index');
+            Route::get('/sp/saya/{sp}', [\App\Http\Controllers\SuratPeringatanController::class, 'show'])->name('sp.saya.show');
+            Route::get('/sp/saya/{sp}/pdf', [\App\Http\Controllers\SuratPeringatanController::class, 'pdf'])->name('sp.saya.pdf');
+        });
     });
 
     // Cetak Surat Izin Peminjaman (bisa diakses ormawa pemohon, BKHM, Sarpras, dan Admin)
@@ -277,6 +289,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/surat-peringatan/{sp}/teruskan', [\App\Http\Controllers\Bkhm\BkhmController::class, 'spTeruskan'])->name('sp.teruskan');
         Route::post('/surat-peringatan/{sp}/kembalikan', [\App\Http\Controllers\Bkhm\BkhmController::class, 'spKembalikan'])->name('sp.kembalikan');
         Route::get('/verifikasi-tempat', [\App\Http\Controllers\Bkhm\BkhmController::class, 'verifikasiTempat'])->name('verifikasi-tempat.index');
+
+        // Pengaturan Fitur Himpunan Mahasiswa (HIMA)
+        Route::get('/hima-fitur', [\App\Http\Controllers\Bkhm\HimaFiturController::class, 'index'])->name('hima-fitur.index');
+        Route::post('/hima-fitur', [\App\Http\Controllers\Bkhm\HimaFiturController::class, 'update'])->name('hima-fitur.update');
+        Route::post('/hima-fitur/reset/{user}', [\App\Http\Controllers\Bkhm\HimaFiturController::class, 'resetUser'])->name('hima-fitur.reset');
     });
 
     // Ekspor Keuangan Resmi (dapat diunduh BKHM, WR3, Admin)
@@ -336,17 +353,19 @@ Route::middleware('auth')->group(function () {
     });
 
     // Program Kerja Routes
-    Route::get('/proker', [ProgramKerjaController::class, 'index'])->name('proker.index');
-    Route::middleware(['role:ormawa|bem'])->group(function () {
-        Route::get('/proker/tambah', [ProgramKerjaController::class, 'create'])->name('proker.create');
-        Route::post('/proker', [ProgramKerjaController::class, 'store'])->name('proker.store');
-    });
-    Route::middleware(['role:bpm|admin'])->group(function () {
-        Route::put('/proker/{proker}', [ProgramKerjaController::class, 'update'])->name('proker.update');
+    Route::middleware(['hima.fitur:proker'])->group(function () {
+        Route::get('/proker', [ProgramKerjaController::class, 'index'])->name('proker.index');
+        Route::middleware(['role:ormawa|bem'])->group(function () {
+            Route::get('/proker/tambah', [ProgramKerjaController::class, 'create'])->name('proker.create');
+            Route::post('/proker', [ProgramKerjaController::class, 'store'])->name('proker.store');
+        });
+        Route::middleware(['role:bpm|admin'])->group(function () {
+            Route::put('/proker/{proker}', [ProgramKerjaController::class, 'update'])->name('proker.update');
+        });
     });
 
     // FR-020: Pelaporan Prestasi / Kompetisi (mahasiswa, ormawa, verifikator)
-    Route::middleware(['role:mahasiswa|ormawa|bem|bpm|bkhm|wr3|admin'])->group(function () {
+    Route::middleware(['role:mahasiswa|ormawa|bem|bpm|bkhm|wr3|admin', 'hima.fitur:prestasi'])->group(function () {
         Route::get('/prestasi', [PrestasiController::class, 'index'])->name('prestasi.index');
         Route::get('/prestasi/create', [PrestasiController::class, 'create'])->name('prestasi.create');
         Route::post('/prestasi', [PrestasiController::class, 'store'])->name('prestasi.store');

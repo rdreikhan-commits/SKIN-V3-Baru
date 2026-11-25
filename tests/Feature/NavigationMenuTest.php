@@ -103,6 +103,15 @@ class NavigationMenuTest extends TestCase
 
     public function test_hima_navigation_only_shows_dana_non_akademik_and_lpj(): void
     {
+        // Simulasikan ketika BKHM menonaktifkan fitur sarpras, proker, persuratan, dan prestasi untuk HIMA
+        \App\Models\HimaFiturSetting::create(['fitur_key' => 'sarpras', 'fitur_label' => 'Sarpras', 'is_aktif' => false]);
+        \App\Models\HimaFiturSetting::create(['fitur_key' => 'proker', 'fitur_label' => 'Proker', 'is_aktif' => false]);
+        \App\Models\HimaFiturSetting::create(['fitur_key' => 'persuratan', 'fitur_label' => 'Persuratan', 'is_aktif' => false]);
+        \App\Models\HimaFiturSetting::create(['fitur_key' => 'prestasi', 'fitur_label' => 'Prestasi', 'is_aktif' => false]);
+        \App\Models\HimaFiturSetting::create(['fitur_key' => 'pengajuan', 'fitur_label' => 'Pengajuan', 'is_aktif' => true]);
+        \App\Models\HimaFiturSetting::create(['fitur_key' => 'lpj', 'fitur_label' => 'LPJ', 'is_aktif' => true]);
+        \App\Models\HimaFiturSetting::clearCache();
+
         $hima = $this->createUserWithRole('ormawa');
         $hima->update(['jenis_ormawa' => 'hima', 'name' => 'HIMA Informatika']);
 
@@ -114,9 +123,8 @@ class NavigationMenuTest extends TestCase
         $response->assertSee(route('pengajuan.index'));
         $response->assertSee(route('generator.lpj.create'));
         $response->assertSee(route('lpj.index'));
-        $response->assertSee('Dana Non-Akademik');
 
-        // HIMA TIDAK melihat menu Sarpras, Proker, Persuratan Lain, Prestasi
+        // HIMA TIDAK melihat menu Sarpras, Proker, Persuratan Lain, Prestasi saat dinonaktifkan BKHM
         $response->assertDontSee(route('peminjaman.tempat.create'));
         $response->assertDontSee(route('peminjaman.barang.create'));
         $response->assertDontSee(route('proker.index'));

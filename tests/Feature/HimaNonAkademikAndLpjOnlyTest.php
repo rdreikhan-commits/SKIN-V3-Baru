@@ -21,6 +21,15 @@ class HimaNonAkademikAndLpjOnlyTest extends TestCase
         parent::setUp();
         $this->seed(RolePermissionSeeder::class);
         $this->seed(WorkflowSeeder::class);
+
+        // Uji skenario di mana BKHM menonaktifkan fitur sarpras, proker, prestasi, dan persuratan untuk HIMA
+        \App\Models\HimaFiturSetting::create(['fitur_key' => 'sarpras', 'fitur_label' => 'Sarpras', 'is_aktif' => false]);
+        \App\Models\HimaFiturSetting::create(['fitur_key' => 'proker', 'fitur_label' => 'Proker', 'is_aktif' => false]);
+        \App\Models\HimaFiturSetting::create(['fitur_key' => 'prestasi', 'fitur_label' => 'Prestasi', 'is_aktif' => false]);
+        \App\Models\HimaFiturSetting::create(['fitur_key' => 'persuratan', 'fitur_label' => 'Persuratan', 'is_aktif' => false]);
+        \App\Models\HimaFiturSetting::create(['fitur_key' => 'pengajuan', 'fitur_label' => 'Pengajuan', 'is_aktif' => true]);
+        \App\Models\HimaFiturSetting::create(['fitur_key' => 'lpj', 'fitur_label' => 'LPJ', 'is_aktif' => true]);
+        \App\Models\HimaFiturSetting::clearCache();
     }
 
     private function createHimaUser(): User

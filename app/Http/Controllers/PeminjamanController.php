@@ -15,8 +15,10 @@ class PeminjamanController extends Controller
 {
     protected function checkHimaAccess()
     {
-        if (Auth::user() && Auth::user()->isHima()) {
-            return redirect()->route('dashboard')->with('error', 'Fitur peminjaman fasilitas tidak tersedia untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        if (Auth::user() && Auth::user()->isHima() && !\App\Models\HimaFiturSetting::isAktif('sarpras')) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Fitur peminjaman fasilitas (sarpras) saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.')
+                ->with('warning', 'Fitur peminjaman fasilitas (sarpras) saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.');
         }
         return null;
     }

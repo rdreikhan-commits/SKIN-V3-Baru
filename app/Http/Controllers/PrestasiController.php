@@ -13,8 +13,10 @@ class PrestasiController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->isHima()) {
-            return redirect()->route('dashboard')->with('error', 'Fitur pelaporan prestasi tidak tersedia untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        if ($user->isHima() && !\App\Models\HimaFiturSetting::isAktif('prestasi')) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Fitur pelaporan prestasi saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.')
+                ->with('warning', 'Fitur pelaporan prestasi saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.');
         }
 
         $role = $user->roles->first()?->name;
@@ -31,8 +33,10 @@ class PrestasiController extends Controller
 
     public function create()
     {
-        if (Auth::user()->isHima()) {
-            return redirect()->route('dashboard')->with('error', 'Fitur pelaporan prestasi tidak tersedia untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        if (Auth::user()->isHima() && !\App\Models\HimaFiturSetting::isAktif('prestasi')) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Fitur pelaporan prestasi saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.')
+                ->with('warning', 'Fitur pelaporan prestasi saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.');
         }
 
         return view('prestasi.create');
@@ -40,8 +44,10 @@ class PrestasiController extends Controller
 
     public function store(Request $request)
     {
-        if (Auth::user()->isHima()) {
-            return redirect()->route('dashboard')->with('error', 'Fitur pelaporan prestasi tidak tersedia untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        if (Auth::user()->isHima() && !\App\Models\HimaFiturSetting::isAktif('prestasi')) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Fitur pelaporan prestasi saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.')
+                ->with('warning', 'Fitur pelaporan prestasi saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.');
         }
 
         $validated = $request->validate([

@@ -367,39 +367,96 @@
             </div>
 
             @if(Auth::user()->isHima())
-                <!-- Khusus HIMA: Informasi Alur Dana Non-Akademik & LPJ + Pengumuman -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Khusus HIMA: Informasi Fitur Aktif HIMA & Panduan -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     <div class="lg:col-span-2 bg-white overflow-hidden shadow-sm rounded-2xl border border-slate-200/80 p-6">
                         <div class="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
                             <div class="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             </div>
                             <div>
-                                <h3 class="text-base font-bold text-slate-900">Panduan Fitur Himpunan Mahasiswa (HIMA)</h3>
-                                <p class="text-xs text-slate-500">Sistem ini memfasilitasi pengajuan dana non-akademik dan pertanggungjawaban kegiatan (LPJ).</p>
+                                <h3 class="text-base font-bold text-slate-900">Portal Fitur Himpunan Mahasiswa (HIMA)</h3>
+                                <p class="text-xs text-slate-500">Fitur organisasi Anda diselaraskan dengan UKM dan dikelola langsung melalui kebijakan BKHM.</p>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            @if(\App\Models\HimaFiturSetting::isAktif('pengajuan'))
                             <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/70">
                                 <div class="flex items-center gap-2 mb-1.5">
                                     <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center">1</span>
-                                    <h4 class="text-xs font-bold text-slate-800">Pengajuan Dana Non-Akademik</h4>
+                                    <h4 class="text-xs font-bold text-slate-800">Pengajuan Dana &amp; Proposal</h4>
                                 </div>
-                                <p class="text-[11px] text-slate-600 mb-3">Ajukan anggaran kegiatan non-akademik langsung ke BEM & kemahasiswaan kampus ITG tanpa alur persetujuan prodi.</p>
+                                <p class="text-[11px] text-slate-600 mb-3">Ajukan anggaran kegiatan langsung ke BEM & kemahasiswaan kampus ITG.</p>
                                 <a href="{{ route('pengajuan.create') }}" class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 underline">
                                     <span>Buat Pengajuan</span> &rarr;
                                 </a>
                             </div>
+                            @endif
+
+                            @if(\App\Models\HimaFiturSetting::isAktif('lpj'))
                             <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/70">
                                 <div class="flex items-center gap-2 mb-1.5">
                                     <span class="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-800 text-xs font-bold flex items-center justify-center">2</span>
                                     <h4 class="text-xs font-bold text-slate-800">Laporan Pertanggungjawaban (LPJ)</h4>
                                 </div>
-                                <p class="text-[11px] text-slate-600 mb-3">Setelah dana kegiatan dicairkan dan kegiatan selesai, unggah LPJ resmi untuk diverifikasi oleh BEM, BKHM, dan WR3.</p>
+                                <p class="text-[11px] text-slate-600 mb-3">Unggah LPJ resmi kegiatan untuk diverifikasi oleh BEM, BKHM, dan WR3.</p>
                                 <a href="{{ route('generator.lpj.create') }}" class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 underline">
                                     <span>Buat / Unggah LPJ</span> &rarr;
                                 </a>
                             </div>
+                            @endif
+
+                            @if(\App\Models\HimaFiturSetting::isAktif('sarpras'))
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/70">
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <span class="w-6 h-6 rounded-lg bg-amber-100 text-amber-800 text-xs font-bold flex items-center justify-center">3</span>
+                                    <h4 class="text-xs font-bold text-slate-800">Peminjaman Sarpras Kampus</h4>
+                                </div>
+                                <p class="text-[11px] text-slate-600 mb-3">Pinjam ruangan/fasilitas dan barang inventaris kampus secara digital.</p>
+                                <a href="{{ route('peminjaman.tempat.create') }}" class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 underline">
+                                    <span>Ajukan Peminjaman</span> &rarr;
+                                </a>
+                            </div>
+                            @endif
+
+                            @if(\App\Models\HimaFiturSetting::isAktif('persuratan'))
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/70">
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <span class="w-6 h-6 rounded-lg bg-cyan-100 text-cyan-800 text-xs font-bold flex items-center justify-center">4</span>
+                                    <h4 class="text-xs font-bold text-slate-800">Persuratan Digital</h4>
+                                </div>
+                                <p class="text-[11px] text-slate-600 mb-3">Buat proposal otomatis, surat dinas ber-kop resmi, dan arsip digital.</p>
+                                <a href="{{ route('generator.create') }}" class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 underline">
+                                    <span>Buat Surat / Proposal</span> &rarr;
+                                </a>
+                            </div>
+                            @endif
+
+                            @if(\App\Models\HimaFiturSetting::isAktif('proker'))
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/70">
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <span class="w-6 h-6 rounded-lg bg-purple-100 text-purple-800 text-xs font-bold flex items-center justify-center">5</span>
+                                    <h4 class="text-xs font-bold text-slate-800">Program Kerja Tahunan</h4>
+                                </div>
+                                <p class="text-[11px] text-slate-600 mb-3">Daftarkan dan pantau realisasi program kerja himpunan Anda.</p>
+                                <a href="{{ route('proker.index') }}" class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 underline">
+                                    <span>Kelola Program Kerja</span> &rarr;
+                                </a>
+                            </div>
+                            @endif
+
+                            @if(\App\Models\HimaFiturSetting::isAktif('prestasi'))
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/70">
+                                <div class="flex items-center gap-2 mb-1.5">
+                                    <span class="w-6 h-6 rounded-lg bg-rose-100 text-rose-800 text-xs font-bold flex items-center justify-center">6</span>
+                                    <h4 class="text-xs font-bold text-slate-800">Pelaporan Prestasi</h4>
+                                </div>
+                                <p class="text-[11px] text-slate-600 mb-3">Laporkan prestasi kompetisi mahasiswa prodi untuk validasi BKHM.</p>
+                                <a href="{{ route('prestasi.index') }}" class="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 underline">
+                                    <span>Lapor Prestasi</span> &rarr;
+                                </a>
+                            </div>
+                            @endif
                         </div>
                     </div>
 
@@ -417,8 +474,10 @@
                         </div>
                     </div>
                 </div>
-            @else
-                <!-- Calendar / Facility Usage (Non-HIMA / UKM) -->
+            @endif
+
+            @if(!Auth::user()->isHima() || \App\Models\HimaFiturSetting::isAktif('sarpras'))
+                <!-- Calendar / Facility Usage -->
                 <div class="lg:col-span-3 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b pb-3">
                         <div>
@@ -440,6 +499,7 @@
                         <div id="calendar"></div>
                     </div>
                 </div>
+            @endif
 
                 <!-- Agenda & Facilities List (Simplified) -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -494,7 +554,6 @@
                         </div>
                     </div>
                 </div>
-            @endif
             </div>
         </div>
     </div>

@@ -17,8 +17,8 @@ class ProposalGeneratorController extends Controller
 {
     public function index()
     {
-        if (Auth::user()->isHima()) {
-            return redirect()->route('pengajuan.index')->with('info', 'Himpunan Mahasiswa difokuskan pada Pengajuan Dana Non-Akademik dan LPJ.');
+        if (Auth::user()->isHima() && !\App\Models\HimaFiturSetting::isAktif('persuratan')) {
+            return redirect()->route('pengajuan.index')->with('warning', 'Fitur generator proposal saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.');
         }
 
         $proposals = Auth::user()->hasRole('admin')
@@ -29,8 +29,10 @@ class ProposalGeneratorController extends Controller
 
     public function create()
     {
-        if (Auth::user()->isHima()) {
-            return redirect()->route('pengajuan.create')->with('info', 'Silakan gunakan form Pengajuan Dana Non-Akademik.');
+        if (Auth::user()->isHima() && !\App\Models\HimaFiturSetting::isAktif('persuratan')) {
+            return redirect()->route('pengajuan.create')
+                ->with('warning', 'Fitur generator proposal saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.')
+                ->with('info', 'Silakan gunakan form Pengajuan Dana Non-Akademik.');
         }
 
         return view('generator.create');
@@ -38,8 +40,10 @@ class ProposalGeneratorController extends Controller
 
     public function store(Request $request)
     {
-        if (Auth::user()->isHima()) {
-            return redirect()->route('pengajuan.create')->with('info', 'Silakan gunakan form Pengajuan Dana Non-Akademik.');
+        if (Auth::user()->isHima() && !\App\Models\HimaFiturSetting::isAktif('persuratan')) {
+            return redirect()->route('pengajuan.create')
+                ->with('warning', 'Fitur generator proposal saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.')
+                ->with('info', 'Silakan gunakan form Pengajuan Dana Non-Akademik.');
         }
 
         $request->validate([
@@ -142,8 +146,10 @@ class ProposalGeneratorController extends Controller
 
     public function createLetter()
     {
-        if (Auth::user()->isHima()) {
-            return redirect()->route('dashboard')->with('error', 'Fitur generator persuratan umum tidak dibuka untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        if (Auth::user()->isHima() && !\App\Models\HimaFiturSetting::isAktif('persuratan')) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Fitur generator persuratan umum saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.')
+                ->with('warning', 'Fitur generator persuratan umum saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.');
         }
 
         return view('generator.letters.create');
@@ -268,8 +274,10 @@ class ProposalGeneratorController extends Controller
 
     public function storeLetter(Request $request)
     {
-        if (Auth::user()->isHima()) {
-            return redirect()->route('dashboard')->with('error', 'Fitur generator persuratan umum tidak dibuka untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        if (Auth::user()->isHima() && !\App\Models\HimaFiturSetting::isAktif('persuratan')) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Fitur generator persuratan umum saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.')
+                ->with('warning', 'Fitur generator persuratan umum saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.');
         }
 
         $kalimatPembuka = $request->input('kalimat_pembuka')

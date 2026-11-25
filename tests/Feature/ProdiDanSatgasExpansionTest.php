@@ -217,6 +217,8 @@ class ProdiDanSatgasExpansionTest extends TestCase
 
     public function test_hima_cannot_access_proker_and_redirects_to_dashboard()
     {
+        \App\Models\HimaFiturSetting::setAktif('proker', false);
+
         $hima = User::factory()->create([
             'name' => 'HIMATIF ITG',
             'jenis_ormawa' => 'hima',
@@ -242,6 +244,9 @@ class ProdiDanSatgasExpansionTest extends TestCase
 
     public function test_hima_cannot_access_letter_generator_except_lpj()
     {
+        \App\Models\HimaFiturSetting::setAktif('persuratan', false);
+        \App\Models\HimaFiturSetting::setAktif('lpj', true);
+
         $hima = User::factory()->create([
             'name' => 'HIMA Informatika ITG',
             'jenis_ormawa' => 'hima',

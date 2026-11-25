@@ -162,7 +162,9 @@
                                 <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
                                     ℹ️ <strong>Pengajuan Dana Non-Akademik Himpunan:</strong> Pengajuan dana kegiatan non-akademik ini diteruskan langsung ke BEM & Kemahasiswaan kampus ITG tanpa persetujuan prodi.
                                 </div>
-                                @else
+                                @endif
+
+                                @if(!Auth::user()->isHima() || \App\Models\HimaFiturSetting::isAktif('proker'))
                                 <div class="mb-4">
                                     <x-input-label for="program_kerja_id" :value="__('Program Kerja Terkait (Opsional)')" />
                                     <select id="program_kerja_id" name="program_kerja_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" @if(isset($blocking) && $blocking) disabled @endif>

@@ -81,6 +81,7 @@
                 <div x-show="open && sidebarOpen" class="pl-9 space-y-1 mt-1 border-l border-[#1E2D4A] ml-4">
                     <a href="{{ route('admin.users.index') }}" class="block p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('admin.users.*') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">Manajemen Pengguna</a>
                     <a href="{{ route('admin.konfigurasi.edit') }}" class="block p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('admin.konfigurasi.*') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">Konfigurasi Sistem &amp; Kop</a>
+                    <a href="{{ route('bkhm.hima-fitur.index') }}" class="block p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('bkhm.hima-fitur.*') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">Atur Fitur Himpunan (HIMA)</a>
                     <a href="{{ route('admin.bug.index') }}" class="block p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('admin.bug.*') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">
                         <div class="flex items-center justify-between">
                             <span>Evaluasi Bug IT</span>
@@ -314,6 +315,7 @@
                     <div class="text-[10px] font-bold text-amber-400 uppercase tracking-widest px-2 pt-2 border-t border-[#1E2D4A]">Administrasi &amp; Konfigurasi</div>
                     <a href="{{ route('admin.users.index') }}" class="block ml-2 p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('admin.users.*') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">Manajemen Pengguna</a>
                     <a href="{{ route('admin.konfigurasi.edit') }}" class="block ml-2 p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('admin.konfigurasi.*') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">Konfigurasi Sistem &amp; Kop</a>
+                    <a href="{{ route('bkhm.hima-fitur.index') }}" class="block ml-2 p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('bkhm.hima-fitur.*') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">Atur Fitur Himpunan (HIMA)</a>
                     <a href="{{ route('admin.bug.index') }}" class="block ml-2 p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('admin.bug.*') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">
                         <div class="flex items-center justify-between">
                             <span>Evaluasi Bug IT</span>
@@ -363,59 +365,44 @@
 
         <!-- Pengajuan Group (Ormawa, BEM, BPM) -->
         @hasanyrole('ormawa|bem|bpm')
-        @if(auth()->user()->isHima())
-        <!-- HIMA: Khusus Pengajuan Dana Non-Akademik -->
-        <div class="space-y-1 pb-1">
-            <div x-data="{ open: true }" class="group">
-                <button @click="!sidebarOpen ? (sidebarOpen = true, localStorage.setItem('skin.sidebarOpen','1'), open = true) : (open = !open)"
-                        class="w-full flex items-center p-2 rounded-xl transition-all {{ request()->routeIs('pengajuan.*') ? 'bg-[#132342] text-white font-semibold' : 'text-slate-300 hover:text-white hover:bg-[#132342]/70' }}"
-                        :title="!sidebarOpen ? 'Dana Non-Akademik' : null">
-                    <svg class="w-5 h-5 min-w-[20px] {{ request()->routeIs('pengajuan.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <span x-show="sidebarOpen" class="ml-3 text-sm truncate font-medium">Dana Non-Akademik</span>
-                    <svg x-show="sidebarOpen" :class="open ? 'rotate-180' : ''" class="ml-auto w-4 h-4 transition-transform text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </button>
-                <div x-show="open && sidebarOpen" class="pl-9 space-y-1 mt-1 border-l border-[#1E2D4A] ml-4">
-                    <a href="{{ route('pengajuan.create') }}" class="block p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('pengajuan.create') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">Buat Pengajuan Dana</a>
-                    <a href="{{ route('pengajuan.index') }}" class="block p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('pengajuan.index') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">Riwayat Pengajuan</a>
-                </div>
-            </div>
-        </div>
+        @php
+            $isHima = auth()->user()->isHima();
+            $himaPengajuan = !$isHima || \App\Models\HimaFiturSetting::isAktif('pengajuan');
+            $himaProker = !$isHima || \App\Models\HimaFiturSetting::isAktif('proker');
+            $showPengajuanGroup = $himaPengajuan || $himaProker;
+            $himaSarpras = !$isHima || \App\Models\HimaFiturSetting::isAktif('sarpras');
+            $himaPersuratan = !$isHima || \App\Models\HimaFiturSetting::isAktif('persuratan');
+            $himaLpj = !$isHima || \App\Models\HimaFiturSetting::isAktif('lpj');
+            $himaPrestasi = !$isHima || \App\Models\HimaFiturSetting::isAktif('prestasi');
+            $himaSp = !$isHima || \App\Models\HimaFiturSetting::isAktif('sp');
+        @endphp
 
-        <!-- HIMA: Khusus Laporan Pertanggungjawaban (LPJ) -->
-        <div class="space-y-1 pb-1">
-            <div x-data="{ open: true }" class="group">
-                <button @click="!sidebarOpen ? (sidebarOpen = true, localStorage.setItem('skin.sidebarOpen','1'), open = true) : (open = !open)"
-                        class="w-full flex items-center p-2 rounded-xl transition-all {{ request()->routeIs('lpj.*', 'generator.lpj.*') ? 'bg-[#132342] text-white font-semibold' : 'text-slate-300 hover:text-white hover:bg-[#132342]/70' }}"
-                        :title="!sidebarOpen ? 'Laporan LPJ' : null">
-                    <svg class="w-5 h-5 min-w-[20px] {{ request()->routeIs('lpj.*', 'generator.lpj.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 2v-6m-9-4h12a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" /></svg>
-                    <span x-show="sidebarOpen" class="ml-3 text-sm truncate font-medium">Laporan LPJ</span>
-                    <svg x-show="sidebarOpen" :class="open ? 'rotate-180' : ''" class="ml-auto w-4 h-4 transition-transform text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </button>
-                <div x-show="open && sidebarOpen" class="pl-9 space-y-1 mt-1 border-l border-[#1E2D4A] ml-4">
-                    <a href="{{ route('generator.lpj.create') }}" class="block p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('generator.lpj.*') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">Buat LPJ</a>
-                    <a href="{{ route('lpj.index') }}" class="block p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('lpj.*') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">Monitoring LPJ</a>
-                </div>
-            </div>
-        </div>
-        @else
+        <!-- Pengajuan & Program Kerja Group -->
+        @if($showPengajuanGroup)
         <div class="space-y-1 pb-1">
             <div x-data="{ open: false }" class="group">
                 <button @click="!sidebarOpen ? (sidebarOpen = true, localStorage.setItem('skin.sidebarOpen','1'), open = true) : (open = !open)"
-                        class="w-full flex items-center p-2 rounded-xl transition-all {{ request()->routeIs('pengajuan.*') ? 'bg-[#132342] text-white font-semibold' : 'text-slate-300 hover:text-white hover:bg-[#132342]/70' }}"
+                        class="w-full flex items-center p-2 rounded-xl transition-all {{ request()->routeIs('pengajuan.*', 'proker.*') ? 'bg-[#132342] text-white font-semibold' : 'text-slate-300 hover:text-white hover:bg-[#132342]/70' }}"
                         :title="!sidebarOpen ? 'Pengajuan' : null">
-                    <svg class="w-5 h-5 min-w-[20px] {{ request()->routeIs('pengajuan.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    <svg class="w-5 h-5 min-w-[20px] {{ request()->routeIs('pengajuan.*', 'proker.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     <span x-show="sidebarOpen" class="ml-3 text-sm truncate">Pengajuan</span>
                     <svg x-show="sidebarOpen" :class="open ? 'rotate-180' : ''" class="ml-auto w-4 h-4 transition-transform text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
                 <div x-show="open && sidebarOpen" class="pl-9 space-y-1 mt-1 border-l border-[#1E2D4A] ml-4">
-                    <a href="{{ route('pengajuan.create') }}" class="block p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('pengajuan.create') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">Buat Pengajuan</a>
+                    @if($himaPengajuan)
+                    <a href="{{ route('pengajuan.create') }}" class="block p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('pengajuan.create') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">{{ $isHima ? 'Buat Pengajuan Dana' : 'Buat Pengajuan' }}</a>
                     <a href="{{ route('pengajuan.index') }}" class="block p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('pengajuan.index') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">Riwayat Pengajuan</a>
+                    @endif
+                    @if($himaProker)
                     <a href="{{ route('proker.index') }}" class="block p-1.5 text-xs rounded-lg transition-colors {{ request()->routeIs('proker.*') ? 'text-amber-400 font-bold bg-[#1E3A8A]/50' : 'text-slate-400 hover:text-white hover:bg-[#132342]' }}">Program Kerja</a>
+                    @endif
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Sarpras Group (Tempat & Barang) -->
+        @if($himaSarpras)
         <div class="space-y-1 pb-1">
             <div x-data="{ open: false }" class="group">
                 <button @click="!sidebarOpen ? (sidebarOpen = true, localStorage.setItem('skin.sidebarOpen','1'), open = true) : (open = !open)"
@@ -439,8 +426,10 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Persuratan Digital Group -->
+        @if($himaPersuratan)
         <div class="space-y-1 pb-1">
             <div x-data="{ open: false }" class="group">
                 <button @click="!sidebarOpen ? (sidebarOpen = true, localStorage.setItem('skin.sidebarOpen','1'), open = true) : (open = !open)"
@@ -458,8 +447,10 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Monitoring & Arsip LPJ -->
+        @if($himaLpj)
         <div class="pb-1">
             <a href="{{ route('lpj.index') }}" @if(request()->routeIs('lpj.*')) aria-current="page" @endif :title="!sidebarOpen ? 'Monitoring LPJ' : null"
                class="flex items-center p-2 rounded-xl transition-all {{ request()->routeIs('lpj.*') ? 'bg-[#132342] text-white font-semibold border-l-[3.5px] border-amber-500 shadow-sm' : 'text-slate-300 hover:text-white hover:bg-[#132342]/70' }}">
@@ -467,14 +458,19 @@
                 <span x-show="sidebarOpen" class="ml-3 text-sm truncate">Monitoring LPJ</span>
             </a>
         </div>
+        @endif
 
-        <!-- Prestasi & Aspirasi Group -->
+        <!-- Prestasi & SP Group -->
+        @if($himaPrestasi || $himaSp)
         <div class="space-y-1 pb-1">
+            @if($himaPrestasi)
             <a href="{{ route('prestasi.index') }}" :title="!sidebarOpen ? 'Pelaporan Prestasi' : null"
                class="flex items-center p-2 rounded-xl transition-all {{ request()->routeIs('prestasi.*') ? 'bg-[#132342] text-white font-semibold border-l-[3.5px] border-amber-500 shadow-sm' : 'text-slate-300 hover:text-white hover:bg-[#132342]/70' }}">
                 <svg class="w-5 h-5 min-w-[20px] {{ request()->routeIs('prestasi.*') ? 'text-amber-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
                 <span x-show="sidebarOpen" class="ml-3 text-sm truncate">Pelaporan Prestasi</span>
             </a>
+            @endif
+            @if($himaSp)
             <a href="{{ route('sp.saya.index') }}" :title="!sidebarOpen ? 'Surat Peringatan Saya' : null"
                class="flex items-center justify-between p-2 rounded-xl transition-all {{ request()->routeIs('sp.saya.*') ? 'bg-[#132342] text-white font-semibold border-l-[3.5px] border-amber-500 shadow-sm' : 'text-slate-300 hover:text-white hover:bg-[#132342]/70' }}">
                 <div class="flex items-center">
@@ -487,11 +483,13 @@
                     </span>
                 @endif
             </a>
+            @endif
         </div>
         @endif
         @endhasanyrole
 
         <!-- Informasi & Jadwal Rapat (Tersedia untuk semua role internal) -->
+        @if(!auth()->user()->isHima() || \App\Models\HimaFiturSetting::isAktif('informasi'))
         <div class="space-y-1 pb-1">
             <div x-data="{ open: false }" class="group">
                 <button @click="!sidebarOpen ? (sidebarOpen = true, localStorage.setItem('skin.sidebarOpen','1'), open = true) : (open = !open)"
@@ -507,6 +505,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Notifikasi Sistem -->
         <div class="pb-1">

@@ -12,9 +12,11 @@ class ProgramKerjaController extends Controller
     {
         $user = Auth::user();
 
-        // Fitur Himpunan dibatasi hanya untuk Pengajuan Dana Non-Akademik dan LPJ
-        if ($user->isHima()) {
-            return redirect()->route('dashboard')->with('error', 'Fitur Program Kerja tidak tersedia untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        // Fitur Himpunan dapat diatur aktif/nonaktif oleh BKHM
+        if ($user->isHima() && !\App\Models\HimaFiturSetting::isAktif('proker')) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Fitur Program Kerja saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.')
+                ->with('warning', 'Fitur Program Kerja saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.');
         }
 
         if ($user->hasRole('bpm') || $user->hasRole('admin') || $user->hasRole('bkhm')) {
@@ -27,8 +29,10 @@ class ProgramKerjaController extends Controller
 
     public function create()
     {
-        if (Auth::user()->isHima()) {
-            return redirect()->route('dashboard')->with('error', 'Fitur Program Kerja tidak tersedia untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        if (Auth::user()->isHima() && !\App\Models\HimaFiturSetting::isAktif('proker')) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Fitur Program Kerja saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.')
+                ->with('warning', 'Fitur Program Kerja saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.');
         }
 
         return view('proker.create');
@@ -36,8 +40,10 @@ class ProgramKerjaController extends Controller
 
     public function store(Request $request)
     {
-        if (Auth::user()->isHima()) {
-            return redirect()->route('dashboard')->with('error', 'Fitur Program Kerja tidak tersedia untuk Himpunan Mahasiswa. Fitur Himpunan difokuskan khusus untuk Pengajuan Dana Non-Akademik dan LPJ.');
+        if (Auth::user()->isHima() && !\App\Models\HimaFiturSetting::isAktif('proker')) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Fitur Program Kerja saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.')
+                ->with('warning', 'Fitur Program Kerja saat ini dinonaktifkan oleh BKHM untuk Himpunan Mahasiswa.');
         }
 
         $request->validate([
